@@ -91,3 +91,14 @@ reports/
 .turbo/
 .vercel/
 .parcel-cache/
+
+# Playwright (CI generates smoke.cjs / uses these locally if run)
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+smoke.cjs
+index_out.html
+
+# Cursor / editor project state (optional)
+.cursor/

@@ -1,17 +1,21 @@
 # OuroborosAI
 
-React + Vite + TypeScript client dashboard for OuroborosAI — a Multi-Agent AI System for Scholarship Discovery & Application Assistance (NUS ISS Team 17). Uses React Router for navigation, TanStack Query for server state, and shadcn/ui (Radix) + Tailwind CSS for UI.
+React + Vite + TypeScript frontend for **OuroborosAI** — a Multi-Agent AI System for Scholarship Discovery & Application Assistance (NUS ISS Team 17). Uses React Router for navigation, TanStack Query for server state, and **shadcn/ui** (Radix) + Tailwind CSS for UI.
 
 ## What's in the app
 
-- **Auth flow**: `/login` → protected `/dashboard/*` routes
-- **Dashboard**: Agentic AI chat interface — sidebar with conversation history, new chat, profile
-- **API integration**: Configurable via Vite env vars (`VITE_API_BASE_URL`, `VITE_API_VERSION`); dev default: `http://localhost:8000`
+- **Auth**: Login and Register at `/login` with protected routes; mock auth (e.g. `admin@ouroboros.ai` / `admin`) until backend is ready.
+- **Dashboard**: After login, users land on an agentic AI chat interface (Claude-style):
+  - **Sidebar**: OuroborosAI branding, New Chat, conversation history grouped by date, nav (Profile, Programs, Scholarships, Applications), Settings / Get Help / Search, and user block at bottom (avatar, name, email, dropdown: Account, Billing, Notifications, Log out).
+  - **Chat**: Empty state with suggestion cards; message bubbles (user + assistant with markdown); typing indicator; input bar with file attach and send.
+  - **Pages**: Profile, Programs, Scholarships, Applications (card layout on mobile, table on desktop), Settings (notifications + dark mode toggle).
+- **Theming**: Dark/light mode via `ThemeContext`; preference persisted in `localStorage`; Settings page toggle.
+- **API**: Configurable via Vite env vars (`VITE_API_BASE_URL`, `VITE_API_VERSION`); dev default: `http://localhost:8000`.
 
 ## Prerequisites
 
-- **Node.js**: 20+ (see `.nvmrc`)
-- **npm**: 10+ (project uses `package-lock.json`)
+- **Node.js**: 20+ (see `package.json` `engines`; CI uses Node 22).
+- **npm**: 10+ (project uses `package-lock.json` — commit it for reproducible installs).
 
 ## Setup
 
@@ -21,13 +25,13 @@ React + Vite + TypeScript client dashboard for OuroborosAI — a Multi-Agent AI 
 npm ci
 ```
 
-2. Create your local env file:
+2. (Optional) Local env:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Then edit `.env.local` as needed.
+Edit `.env.local` as needed. Do not commit `.env.local` (it is in `.gitignore`).
 
 3. Start the dev server:
 
@@ -35,51 +39,54 @@ Then edit `.env.local` as needed.
 npm run dev
 ```
 
-Dev runs on **http://localhost:8080** (see `vite.config.ts`).
+Dev server runs at **http://localhost:8080** (see `vite.config.ts`).
 
 ## Environment variables
 
 The app reads env vars via Vite (`import.meta.env`) and centralizes them in `src/config/env.ts`.
 
-| Variable | Description | Default |
-|---|---|---|
-| `VITE_API_BASE_URL` | Base URL for the backend | `http://localhost:8000` |
-| `VITE_API_VERSION` | API version segment | `v1` |
+| Variable              | Description        | Default                  |
+|-----------------------|--------------------|--------------------------|
+| `VITE_API_BASE_URL`   | Backend base URL   | `http://localhost:8000`  |
+| `VITE_API_VERSION`   | API version path   | `v1`                     |
 
 ## Routing (React Router)
 
-Routes are defined in `src/App.tsx`:
+Defined in `src/App.tsx`:
 
-**Public**
+| Route                    | Description                    |
+|--------------------------|--------------------------------|
+| `/`                      | Redirects to `/dashboard`      |
+| `/login`                 | Login / Register (public)      |
+| `/dashboard`             | Chat (default); new chat       |
+| `/dashboard/chat/:chatId`| Existing conversation          |
+| `/dashboard/profile`     | Student profile                |
+| `/dashboard/programs`     | Discovered programs            |
+| `/dashboard/scholarships` | Matched scholarships           |
+| `/dashboard/applications` | Application tracker            |
+| `/dashboard/settings`    | User settings (e.g. dark mode) |
+| `*`                      | 404 → NotFound                 |
 
-- `/login`
-
-**Protected**
-
-- `/dashboard` (index)
-
-**Other**
-
-- `*` → NotFound
-
-Protection is handled by `src/components/ProtectedRoute.tsx`.
+All `/dashboard/*` routes are protected and wrapped by `DashboardLayout` (sidebar + main content). Protection is in `src/components/ProtectedRoute.tsx`.
 
 ## Project structure
 
 ```
 src/
   components/
-    auth/
-      LoginForm.tsx
-      SignUpForm.tsx
-    layout/               # (future: DashboardLayout, Sidebar, Header)
+    auth/           # LoginForm, SignUpForm
+    chat/           # ChatEmptyState, ChatInput, ChatMessages, MessageBubble, TypingIndicator
+    layout/         # DashboardLayout, AppSidebar, DashboardHeader
+    ui/             # shadcn/ui (button, card, form, sidebar, avatar, etc.)
     ErrorBoundary.tsx
+    LoadingSpinner.tsx
     ProtectedRoute.tsx
-    ui/                   # shadcn/ui (button, card, form, input, etc.)
   config/
     env.ts
   contexts/
     AuthContext.tsx
+    ChatContext.tsx
+    ThemeContext.tsx
   hooks/
     use-mobile.tsx
     use-toast.ts
@@ -87,16 +94,23 @@ src/
     api/
       client.ts
       endpoints.ts
-    utils.ts              # cn() helper
+    mock-data.ts
+    utils.ts
   pages/
     Login.tsx
-    Dashboard.tsx
+    ChatPage.tsx
+    ProfilePage.tsx
+    ProgramsPage.tsx
+    ScholarshipsPage.tsx
+    ApplicationsPage.tsx
+    SettingsPage.tsx
     NotFound.tsx
   services/
     auth.ts
   types/
     api.types.ts
     auth.types.ts
+    chat.types.ts
   App.tsx
   main.tsx
   index.css
@@ -105,39 +119,38 @@ src/
 
 ## Scripts
 
-| Script | Description |
-|---|---|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build → `dist/` |
-| `npm run build:gh-pages` | Build with GitHub Pages base path |
-| `npm run preview` | Preview production build locally |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier (write) |
-| `npm run format:check` | Prettier (check only) |
-| `npm run test` | Vitest (watch) |
-| `npm run test:ci` | Vitest (single run + coverage) |
-| `npm run test:watch` | Vitest (watch) |
-| `npm run deploy` | Build for GitHub Pages and deploy via gh-pages |
+| Script               | Description                          |
+|----------------------|--------------------------------------|
+| `npm run dev`        | Start dev server (port 8080)         |
+| `npm run build`      | Production build → `dist/`           |
+| `npm run build:gh-pages` | Build for GitHub Pages            |
+| `npm run preview`    | Preview production build locally     |
+| `npm run lint`       | ESLint                               |
+| `npm run format`     | Prettier (write)                     |
+| `npm run format:check` | Prettier (check only)              |
+| `npm run test`       | Vitest (watch)                       |
+| `npm run test:ci`    | Vitest single run + coverage         |
+| `npm run test:watch` | Vitest watch                         |
+| `npm run deploy`     | Build and deploy to GitHub Pages     |
 
 ## Deployment — ouroboros.chat
 
-The dashboard is deployed to **https://ouroboros.chat** via GitHub Pages with a custom domain.
+The app is deployed to **https://ouroboros.chat** via GitHub Pages with a custom domain.
 
-Key files:
-
-| File | Purpose |
-|---|---|
-| `public/CNAME` | Defines custom domain `ouroboros.chat`; copied to `dist/` by Vite |
-| `vite.config.ts` | `base: '/'` for correct asset URLs on the root domain |
-| `public/404.html` | SPA routing with `pathSegmentsToKeep = 0` for root domain |
-| `index.html` | Redirect handler matching `404.html` `?p=` scheme |
-| `.github/workflows/deploy.yml` | CI/CD pipeline; verifies CNAME, deploys, health-checks ouroboros.chat |
+| File / folder      | Purpose |
+|--------------------|--------|
+| `public/CNAME`     | Custom domain `ouroboros.chat`; Vite copies it to `dist/` on build. **Only** `public/CNAME` is used (no root `CNAME`). |
+| `public/404.html`  | SPA fallback for client-side routing on GitHub Pages. |
+| `index.html`       | Entry HTML; includes redirect handling for `?p=` deep links. |
+| `.github/workflows/deploy.yml` | CI/CD: lint, format check, unit tests, Docker build + Trivy, Snyk, build verification, deploy to gh-pages, health check, Playwright smoke test, ZAP baseline. Uses Node 24–compatible actions (e.g. `actions/checkout@v5`, `actions/setup-node@v5`, `actions/upload-artifact@v5`) and Node 22. |
 
 Build for production:
 
 ```bash
 npm run build
 ```
+
+Ensure `dist/CNAME` exists and contains `ouroboros.chat` (sourced from `public/CNAME`).
 
 ## Docker (static hosting via Nginx)
 
@@ -154,9 +167,24 @@ Nginx is configured in `nginx.conf` for SPA routing (`try_files ... /index.html`
 
 - React 19, TypeScript
 - Vite 8
-- Tailwind CSS
-- shadcn/ui + Radix UI
+- Tailwind CSS, shadcn/ui, Radix UI
 - React Router v7
 - TanStack Query
 - Sonner (toast notifications)
-- Vitest
+- react-markdown, remark-gfm (chat messages)
+- react-textarea-autosize (chat input)
+- Vitest (unit tests)
+
+## What not to commit
+
+`.gitignore` is set up so you do **not** commit:
+
+- `node_modules/`, `dist/`, `build/`, `coverage/`
+- `.env`, `.env.local`, `.env.*.local`, and other env files (except `.env.example`)
+- IDE/OS junk (`.vscode/`, `.idea/`, `.DS_Store`, etc.)
+- Logs, lockfiles from other package managers (`yarn.lock`, `pnpm-lock.yaml`, `bun.lockb`)
+- CI/security artifacts (`snyk.sarif`, `trivy-results.json`, `zap-*`, `summary.md`, `reports/`)
+- Playwright/CI-generated files (`smoke.cjs`, `index_out.html`, `playwright-report/`, etc.)
+- `.cursor/` (Cursor project state)
+
+Do **commit** `package-lock.json` for reproducible `npm ci` installs.

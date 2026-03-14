@@ -17,54 +17,56 @@ export default function ProfilePage() {
   const { user } = useAuth();
 
   return (
-    <div className="flex-1 overflow-auto p-6">
-      <div className="mx-auto max-w-3xl space-y-6">
+    <div className="flex-1 overflow-auto p-4 sm:p-6">
+      <div className="mx-auto max-w-3xl space-y-4 sm:space-y-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Profile</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Profile</h2>
+          <p className="text-xs text-muted-foreground sm:text-sm">
             Your student profile used by OuroborosAI agents.
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16 rounded-xl">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Avatar className="h-12 w-12 rounded-xl sm:h-16 sm:w-16">
                 <AvatarImage src="/shadcn.jpg" />
-                <AvatarFallback className="text-lg">{user?.name?.charAt(0) ?? "U"}</AvatarFallback>
+                <AvatarFallback className="text-base sm:text-lg">
+                  {user?.name?.charAt(0) ?? "U"}
+                </AvatarFallback>
               </Avatar>
-              <div>
-                <CardTitle>{user?.name ?? "User"}</CardTitle>
-                <CardDescription>{user?.email}</CardDescription>
+              <div className="min-w-0">
+                <CardTitle className="text-base sm:text-lg">{user?.name ?? "User"}</CardTitle>
+                <CardDescription className="truncate">{user?.email}</CardDescription>
               </div>
             </div>
           </CardHeader>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Academic Background</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base sm:text-lg">Academic Background</CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
               <div>
-                <dt className="text-sm text-muted-foreground">University</dt>
+                <dt className="text-xs text-muted-foreground sm:text-sm">University</dt>
                 <dd className="text-sm font-medium">{mockProfile.university}</dd>
               </div>
               <div>
-                <dt className="text-sm text-muted-foreground">Degree</dt>
+                <dt className="text-xs text-muted-foreground sm:text-sm">Degree</dt>
                 <dd className="text-sm font-medium">{mockProfile.degree}</dd>
               </div>
               <div>
-                <dt className="text-sm text-muted-foreground">GPA</dt>
+                <dt className="text-xs text-muted-foreground sm:text-sm">GPA</dt>
                 <dd className="text-sm font-medium">{mockProfile.gpa}</dd>
               </div>
               <div>
-                <dt className="text-sm text-muted-foreground">Graduation Year</dt>
+                <dt className="text-xs text-muted-foreground sm:text-sm">Graduation Year</dt>
                 <dd className="text-sm font-medium">{mockProfile.graduationYear}</dd>
               </div>
               <div className="sm:col-span-2">
-                <dt className="text-sm text-muted-foreground">Target Degree</dt>
+                <dt className="text-xs text-muted-foreground sm:text-sm">Target Degree</dt>
                 <dd className="text-sm font-medium">{mockProfile.targetDegree}</dd>
               </div>
             </dl>
@@ -72,13 +74,13 @@ export default function ProfilePage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Skills</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base sm:text-lg">Skills</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {mockProfile.skills.map((skill) => (
-                <Badge key={skill} variant="secondary">
+                <Badge key={skill} variant="secondary" className="text-xs">
                   {skill}
                 </Badge>
               ))}
@@ -87,13 +89,13 @@ export default function ProfilePage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Research Interests</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base sm:text-lg">Research Interests</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {mockProfile.researchInterests.map((interest) => (
-                <Badge key={interest} variant="outline">
+                <Badge key={interest} variant="outline" className="text-xs">
                   {interest}
                 </Badge>
               ))}

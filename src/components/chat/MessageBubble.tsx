@@ -20,11 +20,11 @@ export function MessageBubble({ message, userName }: MessageBubbleProps) {
 
   if (isUser) {
     return (
-      <div className="flex justify-end gap-3 px-4 py-3">
-        <div className="max-w-[75%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+      <div className="flex justify-end gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm text-primary-foreground sm:max-w-[75%] sm:px-4 sm:py-2.5">
           <p className="whitespace-pre-wrap">{message.content}</p>
         </div>
-        <Avatar className="h-8 w-8 shrink-0 rounded-xl">
+        <Avatar className="hidden h-7 w-7 shrink-0 rounded-xl sm:flex sm:h-8 sm:w-8">
           <AvatarImage src="/shadcn.jpg" />
           <AvatarFallback className="text-xs">
             {userName ? getInitials(userName) : "U"}
@@ -35,9 +35,9 @@ export function MessageBubble({ message, userName }: MessageBubbleProps) {
   }
 
   return (
-    <div className="group flex gap-3 px-4 py-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-        <img src="/orb.jpg" alt="" className="h-6 w-6 rounded-full object-cover" />
+    <div className="group flex gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted sm:h-8 sm:w-8">
+        <img src="/orb.jpg" alt="" className="h-5 w-5 rounded-full object-cover sm:h-6 sm:w-6" />
       </div>
       <div className="min-w-0 flex-1">
         {message.agentName && (

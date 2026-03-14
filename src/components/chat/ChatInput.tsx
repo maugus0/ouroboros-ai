@@ -28,9 +28,9 @@ export function ChatInput({ onSend, isStreaming }: ChatInputProps) {
   };
 
   return (
-    <div className="border-t bg-background px-4 pb-4 pt-3">
+    <div className="border-t bg-background px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
       <div className="mx-auto max-w-3xl">
-        <div className="flex items-end gap-2 rounded-2xl border bg-card px-3 py-2 shadow-sm focus-within:ring-1 focus-within:ring-ring">
+        <div className="flex items-end gap-1.5 rounded-2xl border bg-card px-2 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-ring sm:gap-2 sm:px-3 sm:py-2">
           <Button
             type="button"
             variant="ghost"
@@ -60,7 +60,7 @@ export function ChatInput({ onSend, isStreaming }: ChatInputProps) {
             <ArrowUp className="h-4 w-4" />
           </Button>
         </div>
-        <p className="mt-2 text-center text-xs text-muted-foreground">
+        <p className="mt-1.5 text-center text-[10px] text-muted-foreground sm:mt-2 sm:text-xs">
           OuroborosAI may make mistakes. Verify important scholarship details.
         </p>
       </div>

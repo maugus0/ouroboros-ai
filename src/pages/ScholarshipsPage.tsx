@@ -43,43 +43,45 @@ const mockScholarships = [
 
 export default function ScholarshipsPage() {
   return (
-    <div className="flex-1 overflow-auto p-6">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <div className="flex-1 overflow-auto p-4 sm:p-6">
+      <div className="mx-auto max-w-4xl space-y-4 sm:space-y-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Scholarships</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Scholarships</h2>
+          <p className="text-xs text-muted-foreground sm:text-sm">
             Scholarships matched to your profile by OuroborosAI agents.
           </p>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {mockScholarships.map((scholarship) => (
             <Card key={scholarship.id} className="transition-colors hover:bg-accent/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-base">{scholarship.name}</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">{scholarship.provider}</p>
+              <CardHeader className="pb-2 sm:pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <CardTitle className="text-sm sm:text-base">{scholarship.name}</CardTitle>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">
+                      {scholarship.provider}
+                    </p>
                   </div>
-                  <Badge variant="secondary" className="shrink-0">
+                  <Badge variant="secondary" className="shrink-0 text-xs">
                     {scholarship.match}% match
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <DollarSign className="h-3.5 w-3.5" />
+              <CardContent className="space-y-1.5">
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground sm:gap-4 sm:text-sm">
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     {scholarship.amount}
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Deadline: {scholarship.deadline}
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    {scholarship.deadline}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Globe className="h-3.5 w-3.5 shrink-0" />
-                  {scholarship.eligibility}
+                <div className="flex items-start gap-1 text-xs text-muted-foreground sm:text-sm">
+                  <Globe className="mt-0.5 h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
+                  <span>{scholarship.eligibility}</span>
                 </div>
               </CardContent>
             </Card>

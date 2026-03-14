@@ -45,24 +45,24 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col justify-center space-y-6 px-2 sm:max-w-sm sm:px-0">
-      <div className="flex flex-col space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+    <div className="mx-auto flex w-full max-w-[340px] flex-col justify-center space-y-5 sm:max-w-sm">
+      <div className="flex flex-col space-y-1.5 text-center">
+        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
           Sign in to your account
         </h1>
-        <p className="text-base text-muted-foreground sm:text-lg">
+        <p className="text-sm text-muted-foreground sm:text-base">
           Enter your email and password below
         </p>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-base sm:text-lg">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3.5">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel className="text-sm">Email</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="name@example.com"
@@ -70,6 +70,7 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
                     autoCapitalize="none"
                     autoComplete="email"
                     autoCorrect="off"
+                    className="h-10"
                     {...field}
                   />
                 </FormControl>
@@ -83,12 +84,13 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel className="text-sm">Password</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Enter your password"
                     type="password"
                     autoComplete="current-password"
+                    className="h-10"
                     {...field}
                   />
                 </FormControl>
@@ -97,11 +99,11 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
             )}
           />
 
-          {error && <p className="text-base font-medium text-destructive sm:text-lg">{error}</p>}
+          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
           <Button
             type="submit"
-            className="h-11 w-full text-base sm:h-12 sm:text-lg"
+            className="h-10 w-full text-sm sm:h-11 sm:text-base"
             disabled={form.formState.isSubmitting}
           >
             {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -110,18 +112,18 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
         </form>
       </Form>
 
-      <p className="px-4 text-center text-base text-muted-foreground sm:px-8 sm:text-lg">
+      <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <button
           type="button"
           onClick={onToggle}
-          className="underline underline-offset-4 hover:text-primary"
+          className="font-medium underline underline-offset-4 hover:text-primary"
         >
           Create an account
         </button>
       </p>
 
-      <p className="px-4 text-center text-sm text-muted-foreground sm:px-8 sm:text-base">
+      <p className="text-center text-xs text-muted-foreground">
         By clicking continue, you agree to our{" "}
         <a href="#" className="underline underline-offset-4 hover:text-primary">
           Terms of Service

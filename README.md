@@ -14,7 +14,7 @@ React + Vite + TypeScript frontend for **OuroborosAI** — a Multi-Agent AI Syst
 
 ## Prerequisites
 
-- **Node.js**: 20+ (see `package.json` `engines`; CI uses Node 22).
+- **Node.js**: 20+ (see `package.json` `engines`). For consistency with CI, use the version in `.nvmrc` (e.g. `nvm use`); CI runs on Node 22.
 - **npm**: 10+ (project uses `package-lock.json` — commit it for reproducible installs).
 
 ## Setup

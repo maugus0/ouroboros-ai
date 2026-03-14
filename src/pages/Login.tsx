@@ -71,7 +71,10 @@ export default function Login() {
               alt=""
               className="h-16 w-16 rounded-2xl object-cover shadow-lg ring-1 ring-border sm:h-20 sm:w-20"
             />
-            <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background bg-green-500" />
+            <div
+              className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background bg-green-500"
+              aria-hidden="true"
+            />
           </div>
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl">OuroborosAI</h1>
           <p className="max-w-[260px] text-center text-xs text-muted-foreground sm:max-w-xs sm:text-sm">

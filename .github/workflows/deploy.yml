@@ -16,12 +16,6 @@ env:
 
 permissions:
   contents: read
-  checks: write
-  pull-requests: write
-  security-events: write
-  pages: write
-  id-token: write
-  actions: read
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -32,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -50,6 +47,18 @@ jobs:
 
       - name: Lint (ESLint)
         run: npm run lint
+
+      - name: Install ESLint SARIF formatter (no-save)
+        run: npm install --no-save @microsoft/eslint-formatter-sarif
+
+      - name: Generate ESLint SARIF
+        run: npx eslint . -f @microsoft/eslint-formatter-sarif -o eslint.sarif || true
+
+      - name: Upload ESLint SARIF to Code Scanning
+        if: always() && hashFiles('eslint.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: eslint.sarif
 
   unit-tests:
     name: Unit Tests
@@ -80,17 +89,18 @@ jobs:
           path: coverage
 
   # ---------------------------------------------------------------------------
-  # Stage 2: Docker, Security Scan, Build Verification (parallel)
+  # Stage 2: Docker (after build + security), Security Scan, Build (parallel)
   # ---------------------------------------------------------------------------
   docker-build:
     name: Build Docker Image & Trivy Scan
     runs-on: ubuntu-latest
-    needs: [lint-quality, unit-tests]
+    needs: [lint-quality, unit-tests, build-dist, security-scan]
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     permissions:
       contents: read
       packages: write
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -99,6 +109,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -121,14 +132,28 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          push: true
+          push: ${{ github.event_name == 'push' }}
+          load: ${{ github.event_name == 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Run Trivy vulnerability scanner (SARIF for Code Scanning)
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          format: "sarif"
+          output: "trivy.sarif"
+
+      - name: Upload Trivy SARIF to Code Scanning
+        if: always() && hashFiles('trivy.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+
+      - name: Run Trivy vulnerability scanner (JSON artifact)
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
           format: "json"
@@ -147,32 +172,42 @@ jobs:
     needs: [lint-quality, unit-tests]
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
       - name: Setup Snyk CLI
-        uses: snyk/actions/setup@master
+        if: env.SNYK_TOKEN != ''
+        uses: snyk/actions/setup@v1.0.0
 
       - name: Snyk Open Source scan
+        if: env.SNYK_TOKEN != ''
         id: snyk
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
           snyk auth "$SNYK_TOKEN"
           snyk test \
             --severity-threshold=high \
             --sarif-file-output=snyk.sarif
 
+      - name: Upload Snyk SARIF to Code Scanning
+        if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+
       - name: Upload Snyk SARIF artifact
-        if: always() && hashFiles('snyk.sarif') != ''
+        if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != ''
         uses: actions/upload-artifact@v5
         with:
           name: snyk-sarif
           path: snyk.sarif
 
-  build-verification:
-    name: Build Verification
+  build-dist:
+    name: Build dist (single source of truth)
     runs-on: ubuntu-latest
     needs: [lint-quality, unit-tests]
     env:
@@ -192,6 +227,9 @@ jobs:
 
       - name: Build app
         run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || vars.VITE_API_BASE_URL || 'https://api.ouroboros.chat' }}
+          VITE_API_VERSION: ${{ secrets.VITE_API_VERSION || vars.VITE_API_VERSION || 'v1' }}
 
       - name: Verify CNAME in build output
         run: |
@@ -220,7 +258,7 @@ jobs:
     name: Deploy to ouroboros.chat
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [docker-build, build-verification, security-scan]
+    needs: [docker-build, build-dist, security-scan]
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     permissions:
@@ -240,14 +278,11 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build app
-        run: npm run build
-        env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || vars.VITE_API_BASE_URL || 'https://api.ouroboros.chat' }}
-          VITE_API_VERSION: ${{ secrets.VITE_API_VERSION || vars.VITE_API_VERSION || 'v1' }}
+      - name: Download build artifact (dist)
+        uses: actions/download-artifact@v5
+        with:
+          name: build
+          path: dist
 
       - name: Verify CNAME in dist
         run: |
@@ -451,39 +486,9 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
-      - name: Download coverage artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v5
         with:
-          name: coverage
-          path: reports
-        continue-on-error: true
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: build
-          path: reports
-        continue-on-error: true
-
-      - name: Download trivy-report artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: trivy-report
-          path: reports
-        continue-on-error: true
-
-      - name: Download snyk-sarif artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: snyk-sarif
-          path: reports
-        continue-on-error: true
-
-      - name: Download zap-production artifact
-        if: github.ref == 'refs/heads/main'
-        uses: actions/download-artifact@v5
-        with:
-          name: zap-production
           path: reports
         continue-on-error: true
 

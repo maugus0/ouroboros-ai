@@ -28,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # Only needed when ENABLE_CODE_SCANNING_SARIF=true (optional Code Scanning upload)
       security-events: write
       actions: read
     steps:
@@ -55,9 +56,17 @@ jobs:
       - name: Generate ESLint SARIF
         run: npx eslint . -f @microsoft/eslint-formatter-sarif -o eslint.sarif || true
 
-      # Fork PRs cannot upload SARIF (token is read-only); skip to avoid failing the job.
+      # Code Scanning API fails if disabled in repo Settings → Security. Use artifact instead.
+      - name: Upload ESLint SARIF artifact
+        if: always() && hashFiles('eslint.sarif') != ''
+        uses: actions/upload-artifact@v6
+        with:
+          name: eslint-sarif
+          path: eslint.sarif
+
+      # Optional: after enabling Code Scanning on the repo, set Actions variable ENABLE_CODE_SCANNING_SARIF=true
       - name: Upload ESLint SARIF to Code Scanning
-        if: always() && hashFiles('eslint.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: vars.ENABLE_CODE_SCANNING_SARIF == 'true' && always() && hashFiles('eslint.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: eslint.sarif
@@ -165,7 +174,7 @@ jobs:
             --sarif-file-output=snyk.sarif
 
       - name: Upload Snyk SARIF to Code Scanning
-        if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: vars.ENABLE_CODE_SCANNING_SARIF == 'true' && env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: snyk.sarif
@@ -295,7 +304,7 @@ jobs:
           output: "trivy.sarif"
 
       - name: Upload Trivy SARIF to Code Scanning
-        if: always() && hashFiles('trivy.sarif') != ''
+        if: vars.ENABLE_CODE_SCANNING_SARIF == 'true' && always() && hashFiles('trivy.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy.sarif

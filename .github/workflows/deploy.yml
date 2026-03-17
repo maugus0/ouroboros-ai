@@ -6,13 +6,15 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches: [main]
+    tags:
+      - "v*"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  NODE_VERSION: "24"
 
 permissions:
   contents: read
@@ -24,19 +26,17 @@ jobs:
   lint-quality:
     name: Lint & Formatting
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     permissions:
       contents: read
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
-      - name: Use Node.js 22
-        uses: actions/setup-node@v5
+      - name: Use Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies (npm ci)
@@ -63,16 +63,14 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
-      - name: Use Node.js 22
-        uses: actions/setup-node@v5
+      - name: Use Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies (npm ci)
@@ -83,27 +81,112 @@ jobs:
 
       - name: Upload coverage artifact
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage
           path: coverage
 
   # ---------------------------------------------------------------------------
-  # Stage 2: Docker (after build + security), Security Scan, Build (parallel)
+  # Stage 2: Build dist (artifact for deploy) + Security Scan (parallel)
+  # build-dist = Vite build → dist/ → artifact "build" (used by deploy-pages for ouroboros.chat)
+  # security-scan = Snyk OSS scan dependencies
   # ---------------------------------------------------------------------------
-  docker-build:
-    name: Build Docker Image & Trivy Scan
+  build-dist:
+    name: Build dist (artifact for deploy)
     runs-on: ubuntu-latest
-    needs: [lint-quality, unit-tests, build-dist, security-scan]
+    needs: [lint-quality, unit-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || vars.VITE_API_BASE_URL || 'https://api.ouroboros.chat' }}
+          VITE_API_VERSION: ${{ secrets.VITE_API_VERSION || vars.VITE_API_VERSION || 'v1' }}
+          VITE_APP_VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+
+      - name: Verify CNAME in build output
+        run: |
+          if [ ! -f dist/CNAME ]; then
+            echo "❌ dist/CNAME not found! Ensure public/CNAME contains: ouroboros.chat"
+            exit 1
+          fi
+          DOMAIN=$(cat dist/CNAME | tr -d '[:space:]')
+          echo "✅ CNAME found: $DOMAIN"
+          if [ "$DOMAIN" != "ouroboros.chat" ]; then
+            echo "⚠️  Expected ouroboros.chat but got: $DOMAIN"
+            exit 1
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: build
+          path: dist
+
+  security-scan:
+    name: Security Scan (Snyk OSS)
+    runs-on: ubuntu-latest
+    needs: [lint-quality, unit-tests]
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     permissions:
       contents: read
-      packages: write
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
+
+      - name: Setup Snyk CLI
+        if: env.SNYK_TOKEN != ''
+        uses: snyk/actions/setup@v1.0.0
+
+      - name: Snyk Open Source scan
+        if: env.SNYK_TOKEN != ''
+        id: snyk
+        run: |
+          snyk auth "$SNYK_TOKEN"
+          snyk test \
+            --severity-threshold=high \
+            --sarif-file-output=snyk.sarif
+
+      - name: Upload Snyk SARIF to Code Scanning
+        if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+
+      - name: Upload Snyk SARIF artifact
+        if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != ''
+        uses: actions/upload-artifact@v6
+        with:
+          name: snyk-sarif
+          path: snyk.sarif
+
+  # ---------------------------------------------------------------------------
+  # Stage 3: Docker image (GHCR) — after Stage 2
+  # ---------------------------------------------------------------------------
+  docker-build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [lint-quality, unit-tests, build-dist, security-scan]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -129,7 +212,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: ${{ github.event_name == 'push' }}
@@ -139,6 +222,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # ---------------------------------------------------------------------------
+  # Stage 4: Trivy vulnerability scan on Docker image — after Stage 3 (push only)
+  # ---------------------------------------------------------------------------
+  trivy-scan:
+    name: Trivy vulnerability scan
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    permissions:
+      contents: read
+      security-events: write
+    steps:
       - name: Run Trivy vulnerability scanner (SARIF for Code Scanning)
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -161,106 +256,61 @@ jobs:
 
       - name: Upload Trivy report artifact
         if: always() && hashFiles('trivy-results.json') != ''
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: trivy-report
           path: trivy-results.json
 
-  security-scan:
-    name: Security Scan (Snyk OSS)
+  # ---------------------------------------------------------------------------
+  # Stage 5: Bump package.json version to match tag and commit back to main (tag only)
+  # ---------------------------------------------------------------------------
+  bump-version:
+    name: Bump version to tag and push to main
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     needs: [lint-quality, unit-tests]
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     permissions:
-      contents: read
-      security-events: write
+      contents: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Setup Snyk CLI
-        if: env.SNYK_TOKEN != ''
-        uses: snyk/actions/setup@v1.0.0
-
-      - name: Snyk Open Source scan
-        if: env.SNYK_TOKEN != ''
-        id: snyk
-        run: |
-          snyk auth "$SNYK_TOKEN"
-          snyk test \
-            --severity-threshold=high \
-            --sarif-file-output=snyk.sarif
-
-      - name: Upload Snyk SARIF to Code Scanning
-        if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Checkout main
+        uses: actions/checkout@v6
         with:
-          sarif_file: snyk.sarif
+          ref: main
+          fetch-depth: 0
 
-      - name: Upload Snyk SARIF artifact
-        if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != ''
-        uses: actions/upload-artifact@v5
+      - name: Use Node.js
+        uses: actions/setup-node@v6
         with:
-          name: snyk-sarif
-          path: snyk.sarif
-
-  build-dist:
-    name: Build dist (single source of truth)
-    runs-on: ubuntu-latest
-    needs: [lint-quality, unit-tests]
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Use Node.js 22
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - name: Install dependencies (npm ci)
+      - name: Extract version from tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
         run: npm ci
 
-      - name: Build app
-        run: npm run build
+      - name: Bump package.json version
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Commit and push to main [skip ci]
         env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || vars.VITE_API_BASE_URL || 'https://api.ouroboros.chat' }}
-          VITE_API_VERSION: ${{ secrets.VITE_API_VERSION || vars.VITE_API_VERSION || 'v1' }}
-
-      - name: Verify CNAME in build output
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ ! -f dist/CNAME ]; then
-            echo "❌ dist/CNAME not found! Ensure public/CNAME contains: ouroboros.chat"
-            exit 1
-          fi
-          DOMAIN=$(cat dist/CNAME | tr -d '[:space:]')
-          echo "✅ CNAME found: $DOMAIN"
-          if [ "$DOMAIN" != "ouroboros.chat" ]; then
-            echo "⚠️  Expected ouroboros.chat but got: $DOMAIN"
-            exit 1
-          fi
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v5
-        if: always()
-        with:
-          name: build
-          path: dist
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add package.json package-lock.json
+          git diff --staged --quiet || git commit -m "chore: bump version to $VERSION [skip ci]"
+          git push origin main
 
   # ---------------------------------------------------------------------------
-  # Stage 3: Deploy to GitHub Pages — ouroboros.chat (main only)
+  # Stage 6: Deploy to GitHub Pages — ouroboros.chat (tag only)
   # ---------------------------------------------------------------------------
   deploy-pages:
     name: Deploy to ouroboros.chat
-    if: github.ref == 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     needs: [docker-build, build-dist, security-scan]
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     permissions:
       contents: write
     environment:
@@ -268,18 +318,18 @@ jobs:
       url: https://ouroboros.chat
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Use Node.js 22
-        uses: actions/setup-node@v5
+      - name: Use Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Download build artifact (dist)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: build
           path: dist
@@ -414,15 +464,41 @@ jobs:
           git push origin gh-pages --force
 
   # ---------------------------------------------------------------------------
-  # Stage 4: ZAP production scan (main only, after deploy)
+  # Stage 7: Verify deployed version matches git tag
+  # ---------------------------------------------------------------------------
+  verify-deployed-tag:
+    name: Verify deployed tag
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs: [deploy-pages]
+    steps:
+      - name: Fetch ouroboros.chat and check app-version
+        run: |
+          set -euo pipefail
+          URL="https://ouroboros.chat/"
+          EXPECTED="${{ github.ref_name }}"
+          echo "Expected version (git tag): $EXPECTED"
+          HTML=$(curl -fsSL "$URL")
+          DEPLOYED=$(echo "$HTML" | grep 'name="app-version"' | sed -n 's/.*content="\([^"]*\)".*/\1/p' | head -1) || true
+          echo "Deployed version (meta): ${DEPLOYED:-<empty>}"
+          if [ -z "$DEPLOYED" ]; then
+            echo "❌ No <meta name=\"app-version\" content=\"...\"> found on $URL"
+            exit 1
+          fi
+          if [ "$DEPLOYED" != "$EXPECTED" ]; then
+            echo "❌ Version mismatch: deployed=$DEPLOYED expected=$EXPECTED"
+            exit 1
+          fi
+          echo "✅ Deployed version matches tag: $EXPECTED"
+
+  # ---------------------------------------------------------------------------
+  # Stage 8: ZAP production scan (tag only, after deploy)
   # ---------------------------------------------------------------------------
   zap-production-dast:
     name: OWASP ZAP Baseline Scan
-    if: github.ref == 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     needs: [deploy-pages]
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: OWASP ZAP Baseline on Production
         run: |
@@ -467,7 +543,7 @@ jobs:
 
       - name: Upload ZAP Production report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: zap-production
           path: |
@@ -476,18 +552,16 @@ jobs:
             zap-production.md
 
   # ---------------------------------------------------------------------------
-  # Final: CI summary & report bundle
+  # Stage 9: CI summary & report bundle
   # ---------------------------------------------------------------------------
   reports-summary:
     name: Generate CI Summary & Collect Reports
     runs-on: ubuntu-latest
-    needs: [zap-production-dast]
+    needs: [lint-quality, unit-tests, docker-build, security-scan, build-dist]
     if: always()
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: reports
         continue-on-error: true
@@ -509,7 +583,7 @@ jobs:
           } > summary.md
 
       - name: Upload consolidated report bundle
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ci-reports
           path: |

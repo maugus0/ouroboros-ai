@@ -18,6 +18,8 @@ const getApiBaseUrl = (): string => {
 export const env = {
   API_BASE_URL: getApiBaseUrl(),
   API_VERSION: import.meta.env.VITE_API_VERSION || "v1",
+  /** App version from build (e.g. v1.0.0); set by CI when deploying from a tag. */
+  APP_VERSION: import.meta.env.VITE_APP_VERSION || "",
 
   get API_URL(): string {
     return `${this.API_BASE_URL}/api/${this.API_VERSION}`;

@@ -29,6 +29,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      actions: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -54,9 +55,10 @@ jobs:
       - name: Generate ESLint SARIF
         run: npx eslint . -f @microsoft/eslint-formatter-sarif -o eslint.sarif || true
 
+      # Fork PRs cannot upload SARIF (token is read-only); skip to avoid failing the job.
       - name: Upload ESLint SARIF to Code Scanning
-        if: always() && hashFiles('eslint.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('eslint.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: eslint.sarif
 
@@ -144,6 +146,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      actions: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -162,8 +165,8 @@ jobs:
             --sarif-file-output=snyk.sarif
 
       - name: Upload Snyk SARIF to Code Scanning
-        if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: snyk.sarif
 
@@ -282,6 +285,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      actions: read
     steps:
       - name: Run Trivy vulnerability scanner (SARIF for Code Scanning)
         uses: aquasecurity/trivy-action@0.35.0
@@ -292,7 +296,7 @@ jobs:
 
       - name: Upload Trivy SARIF to Code Scanning
         if: always() && hashFiles('trivy.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy.sarif
 

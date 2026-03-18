@@ -142,7 +142,9 @@ The app is deployed to **https://ouroboros.chat** via GitHub Pages with a custom
 | `public/CNAME`     | Custom domain `ouroboros.chat`; Vite copies it to `dist/` on build. **Only** `public/CNAME` is used (no root `CNAME`). |
 | `public/404.html`  | SPA fallback for client-side routing on GitHub Pages. |
 | `index.html`       | Entry HTML; includes redirect handling for `?p=` deep links. |
-| `.github/workflows/deploy.yml` | CI/CD: lint, format check, unit tests, Docker build + Trivy, Snyk, build verification, deploy to gh-pages, health check, Playwright smoke test, ZAP baseline. Uses Node 24–compatible actions (e.g. `actions/checkout@v5`, `actions/setup-node@v5`, `actions/upload-artifact@v5`) and Node 22. |
+| `.github/workflows/deploy.yml` | CI/CD: lint, format check, unit tests, Docker build + Trivy, Snyk, build verification, deploy to gh-pages, verify tag, ZAP, summary. |
+
+**GitHub Code Scanning (optional):** Uploading SARIF to the Security tab requires **Code scanning** enabled under *Settings → Security → Code scanning*. Until then, ESLint/Snyk/Trivy SARIF is available as workflow **artifacts** (`eslint-sarif`, `snyk-sarif`, etc.). To also push SARIF to Code Scanning after enabling it, set repository Actions variable **`ENABLE_CODE_SCANNING_SARIF`** to `true`.
 
 Build for production:
 

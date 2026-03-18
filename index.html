@@ -3,32 +3,70 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OuroborosAI</title>
+    <title>Ouroboros — Multi-agent scholarship discovery</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
     <link rel="apple-touch-icon" href="/favicon.jpg" />
 
-    <!-- Canonical & SEO -->
+    <!-- Canonical & SEO (aligned with product: discovery → eligibility → application support) -->
     <link rel="canonical" href="https://ouroboros.chat/" />
-    <meta name="description" content="OuroborosAI — Multi-Agent AI System for Scholarship Discovery & Application Assistance. NUS ISS Team 17." />
-    <meta name="keywords" content="Ouroboros, AI, multi-agent, scholarship, NUS, ISS" />
-    <meta name="author" content="Team 17" />
+    <meta
+      name="description"
+      content="Ouroboros: a multi-agent AI system for scholarship discovery—profile and programs, matched scholarships, eligibility insights, and application prep."
+    />
+    <meta
+      name="keywords"
+      content="scholarship discovery, multi-agent AI, student profile, program matching, eligibility matching, study funding, application support, explainable AI"
+    />
+    <meta name="author" content="OuroborosAI" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#18181b" />
     <meta name="app-version" content="__VITE_APP_VERSION__" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="OuroborosAI — Scholarship Discovery & Application Assistance" />
-    <meta property="og:description" content="Multi-Agent AI System for Scholarship Discovery & Application Assistance." />
+    <meta property="og:title" content="Ouroboros — Multi-agent scholarship discovery" />
+    <meta
+      property="og:description"
+      content="From CV to scholarships: specialized agents for programs, discovery, eligibility matching, and application materials."
+    />
     <meta property="og:url" content="https://ouroboros.chat/" />
-    <meta property="og:site_name" content="OuroborosAI" />
+    <meta property="og:site_name" content="Ouroboros" />
     <meta property="og:locale" content="en_SG" />
+    <!-- Add og:image when you have a 1200×630 share image: <meta property="og:image" content="https://ouroboros.chat/og.png" /> -->
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="OuroborosAI — Scholarship Discovery & Application Assistance" />
-    <meta name="twitter:description" content="Multi-Agent AI System for Scholarship Discovery & Application Assistance." />
+    <meta name="twitter:title" content="Ouroboros — Multi-agent scholarship discovery" />
+    <meta
+      name="twitter:description"
+      content="Scholarship discovery pipeline: programs, matches, eligibility reasoning, application materials."
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "Ouroboros",
+            "url": "https://ouroboros.chat/",
+            "description": "Multi-agent AI system for scholarship discovery, eligibility matching, and application support.",
+            "inLanguage": "en-SG"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "Ouroboros",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web",
+            "url": "https://ouroboros.chat/",
+            "description": "Orchestrated agents: student profile, program discovery, scholarships, matching, and application materials.",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+          }
+        ]
+      }
+    </script>
 
     <!-- SPA redirect handler — matches public/404.html ?p= scheme -->
     <script>

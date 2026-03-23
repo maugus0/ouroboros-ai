@@ -294,9 +294,6 @@ jobs:
     permissions:
       contents: write
       actions: read # required for download-artifact (workflow default is contents: read only)
-    environment:
-      name: github-pages
-      url: https://ouroboros.chat
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

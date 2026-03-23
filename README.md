@@ -14,7 +14,7 @@ React + Vite + TypeScript frontend for **OuroborosAI** — a Multi-Agent AI Syst
 
 ## Prerequisites
 
-- **Node.js**: 20+ (see `package.json` `engines`). For consistency with CI, use the version in `.nvmrc` (e.g. `nvm use`); CI runs on Node 22.
+- **Node.js**: 20+ (see `package.json` `engines`). For consistency with CI, use the version in `.nvmrc` (e.g. `nvm use`); CI uses Node **24** (see `.github/workflows/deploy.yml`).
 - **npm**: 10+ (project uses `package-lock.json` — commit it for reproducible installs).
 
 ## Setup
@@ -141,8 +141,40 @@ The app is deployed to **https://ouroboros.chat** via GitHub Pages with a custom
 |--------------------|--------|
 | `public/CNAME`     | Custom domain `ouroboros.chat`; Vite copies it to `dist/` on build. **Only** `public/CNAME` is used (no root `CNAME`). |
 | `public/404.html`  | SPA fallback for client-side routing on GitHub Pages. |
-| `index.html`       | Entry HTML; includes redirect handling for `?p=` deep links. |
-| `.github/workflows/deploy.yml` | CI/CD: lint, format check, unit tests, Docker build + Trivy, Snyk, build verification, deploy to gh-pages, verify tag, ZAP, summary. |
+| `index.html`       | Entry HTML; includes redirect handling for `?p=` deep links; build injects `__VITE_APP_VERSION__` from the tag in CI. |
+| `.github/workflows/deploy.yml` | CI/CD: lint, tests, build artifact, security scans, Docker + Trivy (tag runs), deploy to gh-pages (**tag `v*` only**), **Verify Deployed Tag**, ZAP, summary. |
+
+### Versioning & release flow
+
+**What is the “real” production version?**  
+The **git tag** `v*` (e.g. `v0.1.0`). Production builds set **`VITE_APP_VERSION`** from that tag so `index.html` exposes `<meta name="app-version" content="v0.1.0">` and the app can read **`APP_VERSION`** via `src/config/env.ts`.
+
+**How releases work (manual tag — recommended here)**
+
+1. Merge your changes into **`main`** (via PR as usual).
+2. On the commit you want to ship (usually **tip of `main`**):
+
+   ```bash
+   git checkout main && git pull
+   git tag v0.1.0          # semver; must not exist yet
+   git push origin v0.1.0
+   ```
+
+3. GitHub Actions runs the pipeline for **`refs/tags/v*`**: build → deploy to GitHub Pages → **Verify Deployed Tag** (HTTP check that `ouroboros.chat` meta `app-version` equals the tag) → ZAP, etc.
+
+**`package.json` `version` field**
+
+- It is **not** auto-updated by CI pushing to `main` (that would conflict with **branch protection** requiring PRs).
+- For a **private frontend** repo, it’s fine if **`package.json` version ≠ tag**; the live site version comes from the **tag at build time**.
+- If you want them **in sync** (e.g. clarity, npm scripts, future publishing): bump **`version` in a normal PR** before or after tagging, or use a **bot/Changesets-style PR** — never rely on a bot **direct-pushing** `main` unless your org allows bypass.
+
+**CI jobs to know**
+
+| Job | Role |
+|-----|------|
+| **Build** (tag workflow) | Injects **`VITE_APP_VERSION`** = tag name. |
+| **Deploy to ouroboros.chat** | Only on **`push` of tag `v*`** (not on every `main` push). |
+| **Verify Deployed Tag** | After deploy, curls the live site and asserts **`<meta name="app-version">` === git tag** (sanity check, unrelated to `package.json`). |
 
 **GitHub Code Scanning (optional):** Uploading SARIF to the Security tab requires **Code scanning** enabled under *Settings → Security → Code scanning*. Until then, ESLint/Snyk/Trivy SARIF is available as workflow **artifacts** (`eslint-sarif`, `snyk-sarif`, etc.). To also push SARIF to Code Scanning after enabling it, set repository Actions variable **`ENABLE_CODE_SCANNING_SARIF`** to `true`.
 

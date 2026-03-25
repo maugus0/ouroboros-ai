@@ -451,16 +451,34 @@ jobs:
     needs: [deploy-pages]
     steps:
       - name: Fetch ouroboros.chat and check app-version
+        shell: bash
         run: |
           set -euo pipefail
           URL="https://ouroboros.chat/"
           EXPECTED="${{ github.ref_name }}"
           echo "Expected version (git tag): $EXPECTED"
-          HTML=$(curl -fsSL "$URL")
-          DEPLOYED=$(echo "$HTML" | grep 'name="app-version"' | sed -n 's/.*content="\([^"]*\)".*/\1/p' | head -1) || true
-          echo "Deployed version (meta): ${DEPLOYED:-<empty>}"
+
+          # GitHub Pages/CDN can take a few seconds to serve the new index.html.
+          # Retry to avoid flaky failures where the deploy succeeded but the meta tag isn't visible yet.
+          DEPLOYED=""
+          for i in {1..12}; do
+            echo "Fetch attempt $i ..."
+            HTML="$(curl --retry 3 --retry-delay 5 -fsSL "$URL" || true)"
+            if [ -n "${HTML:-}" ]; then
+              DEPLOYED="$(echo "$HTML" | python3 -c 'import sys,re; html=sys.stdin.read(); m=re.search(r"<meta\\s+[^>]*name=[\"\\']app-version[\"\\'][^>]*content=[\"\\']([^\"\\']*)[\"\\']", html, re.I); print(m.group(1) if m else "")' || true)"
+              DEPLOYED="$(echo -n "${DEPLOYED:-}" | tr -d "\r\n")"
+            fi
+
+            if [ -n "$DEPLOYED" ]; then
+              echo "Deployed version (meta): $DEPLOYED"
+              break
+            fi
+            echo "Meta not visible yet; sleeping..."
+            sleep 5
+          done
+
           if [ -z "$DEPLOYED" ]; then
-            echo "❌ No <meta name=\"app-version\" content=\"...\"> found on $URL"
+            echo "❌ No <meta name=\"app-version\" content=\"...\"> found on $URL after retries"
             exit 1
           fi
           if [ "$DEPLOYED" != "$EXPECTED" ]; then

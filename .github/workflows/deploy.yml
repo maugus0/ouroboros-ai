@@ -557,6 +557,8 @@ jobs:
     permissions:
       contents: read
       actions: read
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     needs:
       [
         lint-quality,
@@ -570,10 +572,48 @@ jobs:
       ]
     if: always()
     steps:
-      - name: Download all artifacts
+      - name: Prepare reports directory
+        shell: bash
+        run: mkdir -p reports
+
+      - name: Download coverage artifact
+        if: needs.unit-tests.result != 'skipped'
         uses: actions/download-artifact@v6
         with:
-          path: reports
+          name: coverage
+          path: reports/coverage
+        continue-on-error: true
+
+      - name: Download ESLint SARIF artifact
+        if: needs.lint-quality.result != 'skipped'
+        uses: actions/download-artifact@v6
+        with:
+          name: eslint-sarif
+          path: reports/eslint
+        continue-on-error: true
+
+      - name: Download Snyk SARIF artifact
+        if: env.SNYK_TOKEN != '' && needs.security-scan.result != 'skipped'
+        uses: actions/download-artifact@v6
+        with:
+          name: snyk-sarif
+          path: reports/snyk
+        continue-on-error: true
+
+      - name: Download Trivy report artifact
+        if: startsWith(github.ref, 'refs/tags/v') && needs.trivy-scan.result != 'skipped'
+        uses: actions/download-artifact@v6
+        with:
+          name: trivy-report
+          path: reports/trivy
+        continue-on-error: true
+
+      - name: Download ZAP production report artifact
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/download-artifact@v6
+        with:
+          name: zap-production
+          path: reports/zap
         continue-on-error: true
 
       - name: Create CI summary

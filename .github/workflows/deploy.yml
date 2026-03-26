@@ -15,6 +15,7 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 permissions:
   contents: read
@@ -577,50 +578,6 @@ jobs:
       ]
     if: always()
     steps:
-      - name: Prepare reports directory
-        shell: bash
-        run: mkdir -p reports
-
-      - name: Download coverage artifact
-        if: needs.unit-tests.result != 'skipped'
-        uses: actions/download-artifact@v6
-        with:
-          name: coverage
-          path: reports/coverage
-        continue-on-error: true
-
-      - name: Download ESLint SARIF artifact
-        if: needs.lint-quality.result != 'skipped'
-        uses: actions/download-artifact@v6
-        with:
-          name: eslint-sarif
-          path: reports/eslint
-        continue-on-error: true
-
-      - name: Download Snyk SARIF artifact
-        if: env.SNYK_TOKEN != '' && needs.security-scan.result != 'skipped'
-        uses: actions/download-artifact@v6
-        with:
-          name: snyk-sarif
-          path: reports/snyk
-        continue-on-error: true
-
-      - name: Download Trivy report artifact
-        if: startsWith(github.ref, 'refs/tags/v') && needs.trivy-scan.result != 'skipped'
-        uses: actions/download-artifact@v6
-        with:
-          name: trivy-report
-          path: reports/trivy
-        continue-on-error: true
-
-      - name: Download ZAP production report artifact
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/download-artifact@v6
-        with:
-          name: zap-production
-          path: reports/zap
-        continue-on-error: true
-
       - name: Create CI summary
         run: |
           {
@@ -629,18 +586,19 @@ jobs:
             echo "- Branch: ${GITHUB_REF##*/}";
             echo "- Domain: https://ouroboros.chat";
             echo "";
-            echo "## Artifacts";
-            COV=$(ls reports/**/lcov.info 2>/dev/null | head -n1 || true); if [ -n "$COV" ]; then echo "- Coverage: $COV"; fi
-            ESL=$(ls reports/**/eslint*.sarif 2>/dev/null | head -n1 || true); if [ -n "$ESL" ]; then echo "- ESLint SARIF: $ESL"; fi
-            SYN=$(ls reports/**/snyk*.sarif 2>/dev/null | head -n1 || true); if [ -n "$SYN" ]; then echo "- Snyk SARIF: $SYN"; fi
-            TRV=$(ls reports/**/trivy-results.json 2>/dev/null | head -n1 || true); if [ -n "$TRV" ]; then echo "- Trivy JSON: $TRV"; fi
-            ZAP_PROD=$(ls reports/**/zap-production.html 2>/dev/null | head -n1 || true); if [ -n "$ZAP_PROD" ]; then echo "- ZAP Production: $ZAP_PROD"; fi
+            echo "## Job Results";
+            echo "- Lint & Formatting: ${{ needs.lint-quality.result }}";
+            echo "- Unit Tests: ${{ needs.unit-tests.result }}";
+            echo "- Build Artifact: ${{ needs.build-dist.result }}";
+            echo "- Security Scan: ${{ needs.security-scan.result }}";
+            echo "- Trivy Scan: ${{ needs.trivy-scan.result }}";
+            echo "- Deploy: ${{ needs.deploy-pages.result }}";
+            echo "- Verify Deployed Tag: ${{ needs.verify-deployed-tag.result }}";
+            echo "- ZAP Production Scan: ${{ needs.zap-production-dast.result }}";
           } > summary.md
 
       - name: Upload consolidated report bundle
         uses: actions/upload-artifact@v6
         with:
           name: ci-reports
-          path: |
-            summary.md
-            reports/**
+          path: summary.md

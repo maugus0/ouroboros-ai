@@ -15,6 +15,7 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 permissions:
   contents: read
@@ -60,7 +61,7 @@ jobs:
       # Code Scanning API fails if disabled in repo Settings → Security. Use artifact instead.
       - name: Upload ESLint SARIF artifact
         if: always() && hashFiles('eslint.sarif') != ''
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: eslint-sarif
           path: eslint.sarif
@@ -94,7 +95,7 @@ jobs:
 
       - name: Upload coverage artifact
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage
@@ -142,7 +143,7 @@ jobs:
           fi
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: build
@@ -183,7 +184,7 @@ jobs:
 
       - name: Upload Snyk SARIF artifact
         if: env.SNYK_TOKEN != '' && always() && hashFiles('snyk.sarif') != ''
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: snyk-sarif
           path: snyk.sarif
@@ -226,7 +227,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: ${{ github.event_name == 'push' }}
@@ -278,7 +279,7 @@ jobs:
 
       - name: Upload Trivy report artifact
         if: always() && hashFiles('trivy-results.json') != ''
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: trivy-report
           path: trivy-results.json
@@ -307,7 +308,7 @@ jobs:
           cache: npm
 
       - name: Download build artifact (dist)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: build
           path: dist
@@ -457,11 +458,11 @@ jobs:
           URL="https://ouroboros.chat/"
           EXPECTED="${{ github.ref_name }}"
           echo "Expected version (git tag): $EXPECTED"
+          echo "Waiting 15s before verification..."
+          sleep 15
 
-          # GitHub Pages/CDN can take a few seconds to serve the new index.html.
-          # Retry to avoid flaky failures where the deploy succeeded but the meta tag isn't visible yet.
           DEPLOYED=""
-          for i in {1..12}; do
+          for i in {1..3}; do
             echo "Fetch attempt $i ..."
             HTML="$(curl --retry 3 --retry-delay 5 -fsSL "$URL" || true)"
             if [ -n "${HTML:-}" ]; then
@@ -470,21 +471,26 @@ jobs:
             fi
 
             if [ -n "$DEPLOYED" ]; then
-              echo "Deployed version (meta): $DEPLOYED"
               break
             fi
-            echo "Meta not visible yet; sleeping..."
-            sleep 5
+
+            if [ "$i" -lt 3 ]; then
+              echo "Meta app-version not found yet; waiting 5s before retry..."
+              sleep 5
+            fi
           done
 
           if [ -z "$DEPLOYED" ]; then
-            echo "❌ No <meta name=\"app-version\" content=\"...\"> found on $URL after retries"
+            echo "❌ No <meta name=\"app-version\" content=\"...\"> found on $URL after 3 attempts"
             exit 1
           fi
+
+          echo "Deployed version (meta): $DEPLOYED"
           if [ "$DEPLOYED" != "$EXPECTED" ]; then
             echo "❌ Version mismatch: deployed=$DEPLOYED expected=$EXPECTED"
             exit 1
           fi
+
           echo "✅ Deployed version matches tag: $EXPECTED"
 
   # ---------------------------------------------------------------------------
@@ -539,7 +545,7 @@ jobs:
 
       - name: Upload ZAP Production report
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: zap-production
           path: |
@@ -572,50 +578,6 @@ jobs:
       ]
     if: always()
     steps:
-      - name: Prepare reports directory
-        shell: bash
-        run: mkdir -p reports
-
-      - name: Download coverage artifact
-        if: needs.unit-tests.result != 'skipped'
-        uses: actions/download-artifact@v6
-        with:
-          name: coverage
-          path: reports/coverage
-        continue-on-error: true
-
-      - name: Download ESLint SARIF artifact
-        if: needs.lint-quality.result != 'skipped'
-        uses: actions/download-artifact@v6
-        with:
-          name: eslint-sarif
-          path: reports/eslint
-        continue-on-error: true
-
-      - name: Download Snyk SARIF artifact
-        if: env.SNYK_TOKEN != '' && needs.security-scan.result != 'skipped'
-        uses: actions/download-artifact@v6
-        with:
-          name: snyk-sarif
-          path: reports/snyk
-        continue-on-error: true
-
-      - name: Download Trivy report artifact
-        if: startsWith(github.ref, 'refs/tags/v') && needs.trivy-scan.result != 'skipped'
-        uses: actions/download-artifact@v6
-        with:
-          name: trivy-report
-          path: reports/trivy
-        continue-on-error: true
-
-      - name: Download ZAP production report artifact
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/download-artifact@v6
-        with:
-          name: zap-production
-          path: reports/zap
-        continue-on-error: true
-
       - name: Create CI summary
         run: |
           {
@@ -624,18 +586,19 @@ jobs:
             echo "- Branch: ${GITHUB_REF##*/}";
             echo "- Domain: https://ouroboros.chat";
             echo "";
-            echo "## Artifacts";
-            COV=$(ls reports/**/lcov.info 2>/dev/null | head -n1 || true); if [ -n "$COV" ]; then echo "- Coverage: $COV"; fi
-            ESL=$(ls reports/**/eslint*.sarif 2>/dev/null | head -n1 || true); if [ -n "$ESL" ]; then echo "- ESLint SARIF: $ESL"; fi
-            SYN=$(ls reports/**/snyk*.sarif 2>/dev/null | head -n1 || true); if [ -n "$SYN" ]; then echo "- Snyk SARIF: $SYN"; fi
-            TRV=$(ls reports/**/trivy-results.json 2>/dev/null | head -n1 || true); if [ -n "$TRV" ]; then echo "- Trivy JSON: $TRV"; fi
-            ZAP_PROD=$(ls reports/**/zap-production.html 2>/dev/null | head -n1 || true); if [ -n "$ZAP_PROD" ]; then echo "- ZAP Production: $ZAP_PROD"; fi
+            echo "## Job Results";
+            echo "- Lint & Formatting: ${{ needs.lint-quality.result }}";
+            echo "- Unit Tests: ${{ needs.unit-tests.result }}";
+            echo "- Build Artifact: ${{ needs.build-dist.result }}";
+            echo "- Security Scan: ${{ needs.security-scan.result }}";
+            echo "- Trivy Scan: ${{ needs.trivy-scan.result }}";
+            echo "- Deploy: ${{ needs.deploy-pages.result }}";
+            echo "- Verify Deployed Tag: ${{ needs.verify-deployed-tag.result }}";
+            echo "- ZAP Production Scan: ${{ needs.zap-production-dast.result }}";
           } > summary.md
 
       - name: Upload consolidated report bundle
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ci-reports
-          path: |
-            summary.md
-            reports/**
+          path: summary.md

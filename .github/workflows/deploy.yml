@@ -466,7 +466,7 @@ jobs:
             echo "Fetch attempt $i ..."
             HTML="$(curl --retry 3 --retry-delay 5 -fsSL "$URL" || true)"
             if [ -n "${HTML:-}" ]; then
-              DEPLOYED="$(echo "$HTML" | python3 -c 'import sys,re; html=sys.stdin.read(); m=re.search(r"<meta\\s+[^>]*name=[\"\\']app-version[\"\\'][^>]*content=[\"\\']([^\"\\']*)[\"\\']", html, re.I); print(m.group(1) if m else "")' || true)"
+              DEPLOYED="$(echo "$HTML" | grep 'name=\"app-version\"' | sed -n 's/.*content=\"\([^\"]*\)\".*/\1/p' | head -1)" || true
               DEPLOYED="$(echo -n "${DEPLOYED:-}" | tr -d "\r\n")"
             fi
 

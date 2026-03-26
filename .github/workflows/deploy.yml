@@ -457,11 +457,11 @@ jobs:
           URL="https://ouroboros.chat/"
           EXPECTED="${{ github.ref_name }}"
           echo "Expected version (git tag): $EXPECTED"
+          echo "Waiting 15s before verification..."
+          sleep 15
 
-          # GitHub Pages/CDN can take a few seconds to serve the new index.html.
-          # Retry to avoid flaky failures where the deploy succeeded but the meta tag isn't visible yet.
           DEPLOYED=""
-          for i in {1..12}; do
+          for i in {1..3}; do
             echo "Fetch attempt $i ..."
             HTML="$(curl --retry 3 --retry-delay 5 -fsSL "$URL" || true)"
             if [ -n "${HTML:-}" ]; then
@@ -470,21 +470,26 @@ jobs:
             fi
 
             if [ -n "$DEPLOYED" ]; then
-              echo "Deployed version (meta): $DEPLOYED"
               break
             fi
-            echo "Meta not visible yet; sleeping..."
-            sleep 5
+
+            if [ "$i" -lt 3 ]; then
+              echo "Meta app-version not found yet; waiting 5s before retry..."
+              sleep 5
+            fi
           done
 
           if [ -z "$DEPLOYED" ]; then
-            echo "❌ No <meta name=\"app-version\" content=\"...\"> found on $URL after retries"
+            echo "❌ No <meta name=\"app-version\" content=\"...\"> found on $URL after 3 attempts"
             exit 1
           fi
+
+          echo "Deployed version (meta): $DEPLOYED"
           if [ "$DEPLOYED" != "$EXPECTED" ]; then
             echo "❌ Version mismatch: deployed=$DEPLOYED expected=$EXPECTED"
             exit 1
           fi
+
           echo "✅ Deployed version matches tag: $EXPECTED"
 
   # ---------------------------------------------------------------------------

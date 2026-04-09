@@ -11,7 +11,8 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 type LoginMode = "phone" | "username";
 
 export function LoginForm({ onToggle }: { onToggle: () => void }) {
-  const { login, status, error, clearError, pendingPhone, pendingMfaPhone } = useAuth();
+  const { login, status, error, clearError, pendingPhone, pendingMfaPhone, resetAuthFlow } =
+    useAuth();
 
   const [mode, setMode] = useState<LoginMode>("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -30,15 +31,11 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
   const isFormValid = isIdentifierValid && password.length > 0;
 
   if (isPendingMfa && pendingMfaPhone) {
-    return (
-      <MfaVerificationForm maskedPhone={pendingMfaPhone} onBack={() => window.location.reload()} />
-    );
+    return <MfaVerificationForm maskedPhone={pendingMfaPhone} onBack={resetAuthFlow} />;
   }
 
   if (isPendingOtp && pendingPhone) {
-    return (
-      <OtpVerificationForm phoneNumber={pendingPhone} onBack={() => window.location.reload()} />
-    );
+    return <OtpVerificationForm phoneNumber={pendingPhone} onBack={resetAuthFlow} />;
   }
 
   if (showForgotPassword) {

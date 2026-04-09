@@ -8,6 +8,7 @@ interface PhoneInputProps {
   countryCode: CountryCode;
   onChange: (value: string) => void;
   onCountryChange: (country: CountryCode) => void;
+  onBlur?: () => void;
   error?: string;
   disabled?: boolean;
   placeholder?: string;
@@ -19,6 +20,7 @@ export function PhoneInput({
   countryCode,
   onChange,
   onCountryChange,
+  onBlur,
   error,
   disabled = false,
   placeholder = "Phone number",
@@ -87,6 +89,7 @@ export function PhoneInput({
           inputMode="numeric"
           value={formatForDisplay(value)}
           onChange={handlePhoneChange}
+          onBlur={onBlur}
           disabled={disabled}
           placeholder={placeholder}
           className={`flex-1 rounded-r-lg border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${error ? "border-destructive focus:ring-destructive" : "border-input"}`}

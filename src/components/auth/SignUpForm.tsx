@@ -7,7 +7,7 @@ import { formatE164, getDefaultCountry, validatePhoneNumber } from "@/utils/phon
 import { Loader2, Eye, EyeOff, Check, X } from "lucide-react";
 
 export function SignUpForm({ onToggle }: { onToggle: () => void }) {
-  const { signup, status, error, clearError, pendingPhone } = useAuth();
+  const { signup, status, error, clearError, pendingPhone, resetAuthFlow } = useAuth();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -72,9 +72,7 @@ export function SignUpForm({ onToggle }: { onToggle: () => void }) {
   };
 
   if (isPendingOtp && pendingPhone) {
-    return (
-      <OtpVerificationForm phoneNumber={pendingPhone} onBack={() => window.location.reload()} />
-    );
+    return <OtpVerificationForm phoneNumber={pendingPhone} onBack={resetAuthFlow} />;
   }
 
   return (
@@ -168,6 +166,7 @@ export function SignUpForm({ onToggle }: { onToggle: () => void }) {
               clearError();
             }}
             onCountryChange={setCountryCode}
+            onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
             error={touched.phone && !isPhoneValid ? "Enter a valid phone number" : undefined}
             disabled={isLoading}
           />

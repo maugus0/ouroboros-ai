@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi, getErrorMessage } from "@/api/authApi";
+import { parseUTC } from "@/utils/dateUtils";
 import type { AuthSession } from "@/types/auth";
 import {
   Loader2,
@@ -42,13 +43,9 @@ function parseUserAgent(ua: string | null): { icon: typeof Monitor; label: strin
   return { icon, label: [browser, os].filter(Boolean).join(" on ") };
 }
 
-function asUTC(iso: string): Date {
-  return new Date(iso.endsWith("Z") ? iso : iso + "Z");
-}
-
 function formatRelativeTime(iso: string | null): string {
   if (!iso) return "Unknown";
-  const diff = Date.now() - asUTC(iso).getTime();
+  const diff = Date.now() - parseUTC(iso).getTime();
   const mins = Math.floor(diff / 60_000);
   if (mins < 1) return "Just now";
   if (mins < 60) return `${mins}m ago`;
@@ -56,11 +53,11 @@ function formatRelativeTime(iso: string | null): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
-  return asUTC(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return parseUTC(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function formatDateTime(iso: string): string {
-  return asUTC(iso).toLocaleDateString("en-US", {
+  return parseUTC(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",

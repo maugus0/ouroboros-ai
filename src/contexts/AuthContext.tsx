@@ -8,7 +8,15 @@ import type {
   ProfileUpdateRequest,
 } from "@/types/auth";
 import { authApi, getErrorMessage, isMfaRequired } from "@/api/authApi";
-import { setTokens, clearTokens, hasStoredTokens, getAccessToken } from "@/utils/tokenStorage";
+import {
+  setTokens,
+  clearTokens,
+  hasStoredTokens,
+  getAccessToken,
+  setProfileSkipped,
+  hasProfileSkip,
+  clearProfileSkip,
+} from "@/utils/tokenStorage";
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +36,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (data: ProfileUpdateRequest) => Promise<void>;
   skipProfileCompletion: () => void;
+  resetAuthFlow: () => void;
   clearError: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -59,7 +68,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const userData = await authApi.getCurrentUser();
         setUser(userData);
-        setStatus(userData.profile_completed ? "authenticated" : "pending_profile");
+
+        if (userData.profile_completed) {
+          clearProfileSkip();
+          setStatus("authenticated");
+        } else if (hasProfileSkip()) {
+          setStatus("authenticated");
+        } else {
+          setStatus("pending_profile");
+        }
       } catch {
         clearTokens();
         setStatus("unauthenticated");
@@ -259,9 +276,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const skipProfileCompletion = useCallback(() => {
+    setProfileSkipped();
     setStatus("authenticated");
     navigate("/dashboard");
   }, [navigate]);
+
+  const resetAuthFlow = useCallback(() => {
+    setError(null);
+    setPendingPhone(null);
+    setPendingMfaUserId(null);
+    setPendingMfaPhone(null);
+    setStatus("unauthenticated");
+  }, []);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -293,6 +319,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       updateProfile,
       skipProfileCompletion,
+      resetAuthFlow,
       clearError,
       refreshUser,
     }),
@@ -313,6 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       updateProfile,
       skipProfileCompletion,
+      resetAuthFlow,
       clearError,
       refreshUser,
     ]

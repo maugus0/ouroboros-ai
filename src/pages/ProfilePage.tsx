@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { Gender, Interest } from "@/types/auth";
+import { parseUTC } from "@/utils/dateUtils";
 import { getInitials } from "@/lib/utils";
 import {
   Loader2,
@@ -44,13 +45,9 @@ function formatInterest(i: string | null): string {
   return i.charAt(0).toUpperCase() + i.slice(1);
 }
 
-function asUTC(iso: string): Date {
-  return new Date(iso.endsWith("Z") ? iso : iso + "Z");
-}
-
 function formatDate(iso: string | null): string {
   if (!iso) return "Never";
-  return asUTC(iso).toLocaleDateString("en-US", {
+  return parseUTC(iso).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",

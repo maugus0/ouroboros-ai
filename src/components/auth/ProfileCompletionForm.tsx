@@ -10,11 +10,11 @@ const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: "prefer_not_to_say", label: "Prefer not to say" },
 ];
 
-const INTEREST_OPTIONS: { value: Interest; label: string; description: string }[] = [
-  { value: "jobs", label: "Jobs", description: "Looking for job opportunities" },
-  { value: "startups", label: "Startups", description: "Interested in startup ecosystem" },
-  { value: "research", label: "Research", description: "Pursuing research opportunities" },
-  { value: "degree", label: "Degree", description: "Seeking degree programs & scholarships" },
+const INTEREST_OPTIONS: { value: Interest; label: string }[] = [
+  { value: "jobs", label: "Jobs" },
+  { value: "startups", label: "Startups" },
+  { value: "research", label: "Research" },
+  { value: "degree", label: "Degree" },
 ];
 
 export function ProfileCompletionForm() {
@@ -53,7 +53,6 @@ export function ProfileCompletionForm() {
   const handleSkip = async () => {
     setIsSubmitting(true);
 
-    // Save whatever the user has filled so far
     const hasPartialData = gender || email || aboutMe || profession || interest;
     if (hasPartialData) {
       try {
@@ -65,7 +64,7 @@ export function ProfileCompletionForm() {
           interest: interest || undefined,
         });
       } catch {
-        // Non-blocking -- let the user proceed even if partial save fails
+        // Non-blocking
       }
     }
 
@@ -74,109 +73,104 @@ export function ProfileCompletionForm() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Complete your profile</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Fill in all fields to unlock the full OuroborosAI experience
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Gender */}
-        <div className="space-y-2">
+    <div className="w-full max-w-lg">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Gender -- single row */}
+        <div className="space-y-1.5">
           <label className="text-sm font-medium">Gender</label>
-          <div className="grid grid-cols-2 gap-2">
-            {GENDER_OPTIONS.map((option) => (
+          <div className="grid grid-cols-4 gap-1.5">
+            {GENDER_OPTIONS.map((opt) => (
               <button
-                key={option.value}
+                key={opt.value}
                 type="button"
                 onClick={() => {
-                  setGender(option.value);
+                  setGender(opt.value);
                   clearError();
                 }}
-                className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
-                  gender === option.value
+                className={`rounded-lg border px-2 py-2 text-xs font-medium transition-colors sm:text-sm ${
+                  gender === opt.value
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-input hover:bg-muted"
                 }`}
               >
-                {option.label}
+                {opt.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Email */}
-        <div className="space-y-1">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              clearError();
-            }}
-            disabled={isSubmitting}
-            placeholder="you@example.com"
-            className={`w-full rounded-lg border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${!isEmailValid ? "border-destructive" : "border-input"}`}
-          />
-          {!isEmailValid && <p className="text-xs text-destructive">Enter a valid email address</p>}
+        {/* Email + Profession side by side */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <label htmlFor="email" className="text-sm font-medium">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearError();
+              }}
+              disabled={isSubmitting}
+              placeholder="you@example.com"
+              className={`h-9 w-full rounded-lg border bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${!isEmailValid ? "border-destructive" : "border-input"}`}
+            />
+            {!isEmailValid && <p className="text-xs text-destructive">Enter a valid email</p>}
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="profession" className="text-sm font-medium">
+              Profession
+            </label>
+            <input
+              id="profession"
+              type="text"
+              value={profession}
+              onChange={(e) => {
+                setProfession(e.target.value);
+                clearError();
+              }}
+              disabled={isSubmitting}
+              placeholder="e.g. Software Engineer"
+              maxLength={100}
+              className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            />
+          </div>
         </div>
 
-        {/* Profession */}
-        <div className="space-y-1">
-          <label htmlFor="profession" className="text-sm font-medium">
-            Profession
-          </label>
-          <input
-            id="profession"
-            type="text"
-            value={profession}
-            onChange={(e) => {
-              setProfession(e.target.value);
-              clearError();
-            }}
-            disabled={isSubmitting}
-            placeholder="e.g. Software Engineer, Student, Researcher"
-            maxLength={100}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-          />
-        </div>
-
-        {/* Interest */}
-        <div className="space-y-2">
+        {/* Interest -- single row */}
+        <div className="space-y-1.5">
           <label className="text-sm font-medium">What are you looking for?</label>
-          <div className="grid grid-cols-2 gap-2">
-            {INTEREST_OPTIONS.map((option) => (
+          <div className="grid grid-cols-4 gap-1.5">
+            {INTEREST_OPTIONS.map((opt) => (
               <button
-                key={option.value}
+                key={opt.value}
                 type="button"
                 onClick={() => {
-                  setInterest(option.value);
+                  setInterest(opt.value);
                   clearError();
                 }}
-                className={`rounded-lg border px-4 py-3 text-left transition-colors ${
-                  interest === option.value
+                className={`rounded-lg border px-2 py-2 text-xs font-medium transition-colors sm:text-sm ${
+                  interest === opt.value
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-input hover:bg-muted"
                 }`}
               >
-                <span className="block text-sm font-medium">{option.label}</span>
-                <span className="block text-xs text-muted-foreground">{option.description}</span>
+                {opt.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* About Me */}
+        {/* About Me -- compact */}
         <div className="space-y-1">
-          <label htmlFor="aboutMe" className="text-sm font-medium">
-            About me
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="aboutMe" className="text-sm font-medium">
+              About me
+            </label>
+            <span className="text-xs text-muted-foreground">{aboutMe.length}/500</span>
+          </div>
           <textarea
             id="aboutMe"
             value={aboutMe}
@@ -186,36 +180,30 @@ export function ProfileCompletionForm() {
             }}
             disabled={isSubmitting}
             placeholder="Tell us a bit about yourself..."
-            rows={3}
+            rows={2}
             maxLength={500}
-            className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
           />
-          <p className="text-right text-xs text-muted-foreground">{aboutMe.length}/500</p>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+          <div className="rounded-lg bg-destructive/10 p-2.5 text-xs text-destructive">{error}</div>
         )}
 
-        {!canComplete && (
-          <p className="text-center text-xs text-muted-foreground">
-            All fields are required to complete your profile
-          </p>
-        )}
-
-        <div className="flex gap-3">
+        {/* Actions */}
+        <div className="flex items-center gap-3 pt-1">
           <button
             type="button"
             onClick={handleSkip}
             disabled={isSubmitting}
-            className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 font-medium hover:bg-muted disabled:opacity-50"
+            className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
           >
             Skip for now
           </button>
           <button
             type="submit"
             disabled={isSubmitting || !canComplete}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? (
               <>
@@ -227,6 +215,12 @@ export function ProfileCompletionForm() {
             )}
           </button>
         </div>
+
+        {!canComplete && (
+          <p className="text-center text-[11px] text-muted-foreground">
+            All fields are required to complete your profile
+          </p>
+        )}
       </form>
     </div>
   );

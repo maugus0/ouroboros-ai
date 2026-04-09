@@ -44,9 +44,13 @@ function formatInterest(i: string | null): string {
   return i.charAt(0).toUpperCase() + i.slice(1);
 }
 
+function asUTC(iso: string): Date {
+  return new Date(iso.endsWith("Z") ? iso : iso + "Z");
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) return "Never";
-  return new Date(iso).toLocaleDateString("en-US", {
+  return asUTC(iso).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -114,7 +118,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">
-      <div className="mx-auto max-w-3xl space-y-4 sm:space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

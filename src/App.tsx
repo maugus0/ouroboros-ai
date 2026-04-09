@@ -14,6 +14,9 @@ import ProgramsPage from "@/pages/ProgramsPage";
 import ScholarshipsPage from "@/pages/ScholarshipsPage";
 import ApplicationsPage from "@/pages/ApplicationsPage";
 import SettingsPage from "@/pages/SettingsPage";
+import GetHelpPage from "@/pages/GetHelpPage";
+import AssessmentsPage from "@/pages/AssessmentsPage";
+import BillingPage from "@/pages/BillingPage";
 import ProfileComplete from "@/pages/ProfileComplete";
 
 const queryClient = new QueryClient({
@@ -45,6 +48,9 @@ export default function App() {
                     <Route path="/dashboard/scholarships" element={<ScholarshipsPage />} />
                     <Route path="/dashboard/applications" element={<ApplicationsPage />} />
                     <Route path="/dashboard/settings" element={<SettingsPage />} />
+                    <Route path="/dashboard/help" element={<GetHelpPage />} />
+                    <Route path="/dashboard/assessments" element={<AssessmentsPage />} />
+                    <Route path="/dashboard/billing" element={<BillingPage />} />
                   </Route>
                 </Route>
 

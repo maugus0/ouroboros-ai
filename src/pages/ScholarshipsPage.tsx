@@ -44,7 +44,7 @@ const mockScholarships = [
 export default function ScholarshipsPage() {
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">
-      <div className="mx-auto max-w-4xl space-y-4 sm:space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
           <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Scholarships</h2>
           <p className="text-xs text-muted-foreground sm:text-sm">

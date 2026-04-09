@@ -78,11 +78,11 @@ export function SignUpForm({ onToggle }: { onToggle: () => void }) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[340px] flex-col justify-center space-y-5 sm:max-w-sm">
-      <div className="flex flex-col space-y-1.5 text-center">
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Create an account</h1>
-        <p className="text-sm text-muted-foreground sm:text-base">
-          Enter your details to get started
+    <div className="mx-auto flex w-full max-w-[320px] flex-col justify-center space-y-5 sm:max-w-sm">
+      <div className="flex flex-col space-y-1 text-center">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Create an ORB Account!</h1>
+        <p className="text-[13px] text-muted-foreground sm:text-sm">
+          Enter your details below to get started with ORB.
         </p>
       </div>
 
@@ -144,7 +144,7 @@ export function SignUpForm({ onToggle }: { onToggle: () => void }) {
             }}
             onBlur={() => setTouched((t) => ({ ...t, username: true }))}
             disabled={isLoading}
-            placeholder="your_username"
+            placeholder="like Maugus or IAMTOMATO"
             autoComplete="username"
             className={`h-10 w-full rounded-lg border bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${touched.username && !isUsernameValid ? "border-destructive" : "border-input"}`}
           />
@@ -256,7 +256,7 @@ export function SignUpForm({ onToggle }: { onToggle: () => void }) {
         <button
           type="submit"
           disabled={isLoading || !isFormValid}
-          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:text-base"
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading ? (
             <>
@@ -274,19 +274,19 @@ export function SignUpForm({ onToggle }: { onToggle: () => void }) {
         <button
           type="button"
           onClick={onToggle}
-          className="font-medium underline underline-offset-4 hover:text-primary"
+          className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
         >
           Sign in
         </button>
       </p>
 
-      <p className="text-center text-xs text-muted-foreground">
-        By clicking continue, you agree to our{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-primary">
+      <p className="whitespace-nowrap text-center text-[11px] text-muted-foreground">
+        By continuing, you agree to our{" "}
+        <a href="#" className="underline underline-offset-2 hover:text-primary">
           Terms of Service
         </a>{" "}
         and{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-primary">
+        <a href="#" className="underline underline-offset-2 hover:text-primary">
           Privacy Policy
         </a>
         .

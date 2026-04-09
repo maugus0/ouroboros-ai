@@ -8,12 +8,11 @@ import {
   ClipboardList,
   Settings,
   HelpCircle,
-  Search,
+  Brain,
   MoreHorizontal,
   Trash2,
   Pencil,
   CreditCard,
-  Bell,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -198,13 +197,21 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Search">
-                  <Search className="h-4 w-4" />
-                  <span>Search</span>
+                <SidebarMenuButton
+                  isActive={location.pathname === "/dashboard/assessments"}
+                  onClick={() => navigate("/dashboard/assessments")}
+                  tooltip="Assessments"
+                >
+                  <Brain className="h-4 w-4" />
+                  <span>Assessments</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Get Help">
+                <SidebarMenuButton
+                  isActive={location.pathname === "/dashboard/help"}
+                  onClick={() => navigate("/dashboard/help")}
+                  tooltip="Get Help"
+                >
                   <HelpCircle className="h-4 w-4" />
                   <span>Get Help</span>
                 </SidebarMenuButton>
@@ -255,17 +262,13 @@ export function AppSidebar() {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/dashboard/profile")}>
-                  <User className="mr-2 h-4 w-4" />
+                <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
+                  <Settings className="mr-2 h-4 w-4" />
                   Account
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/dashboard/billing")}>
                   <CreditCard className="mr-2 h-4 w-4" />
                   Billing
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
-                  <Bell className="mr-2 h-4 w-4" />
-                  Notifications
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>

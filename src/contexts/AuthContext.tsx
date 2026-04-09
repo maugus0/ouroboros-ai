@@ -175,7 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         const msg = getErrorMessage(err);
 
-        if (msg.toLowerCase().includes("phone not verified")) {
+        if (msg.toLowerCase().includes("phone not verified") && data.phone_number) {
           setPendingPhone(data.phone_number);
           setStatus("pending_otp");
           try {

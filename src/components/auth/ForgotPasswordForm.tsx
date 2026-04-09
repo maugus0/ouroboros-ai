@@ -162,7 +162,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[340px] flex-col justify-center space-y-5 sm:max-w-sm">
+    <div className="mx-auto flex w-full max-w-[320px] flex-col justify-center space-y-5 sm:max-w-sm">
       {/* Phone step */}
       {step === "phone" && (
         <>
@@ -240,7 +240,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
             </p>
           </div>
 
-          <div className="flex justify-center gap-2">
+          <div className="flex justify-center gap-1.5 sm:gap-2">
             {otp.map((digit, index) => (
               <input
                 key={index}
@@ -255,7 +255,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                 onPaste={handleOtpPaste}
                 disabled={loading}
-                className={`h-14 w-12 rounded-lg border bg-background text-center text-xl font-semibold transition-all focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${error ? "shake border-destructive" : "border-input"}`}
+                className={`h-12 w-10 rounded-lg border bg-background text-center text-lg font-semibold transition-all focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 sm:h-14 sm:w-12 sm:text-xl ${error ? "shake border-destructive" : "border-input"}`}
               />
             ))}
           </div>

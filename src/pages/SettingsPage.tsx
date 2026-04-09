@@ -42,9 +42,13 @@ function parseUserAgent(ua: string | null): { icon: typeof Monitor; label: strin
   return { icon, label: [browser, os].filter(Boolean).join(" on ") };
 }
 
+function asUTC(iso: string): Date {
+  return new Date(iso.endsWith("Z") ? iso : iso + "Z");
+}
+
 function formatRelativeTime(iso: string | null): string {
   if (!iso) return "Unknown";
-  const diff = Date.now() - new Date(iso).getTime();
+  const diff = Date.now() - asUTC(iso).getTime();
   const mins = Math.floor(diff / 60_000);
   if (mins < 1) return "Just now";
   if (mins < 60) return `${mins}m ago`;
@@ -52,11 +56,11 @@ function formatRelativeTime(iso: string | null): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return asUTC(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
+  return asUTC(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -162,7 +166,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">
-      <div className="mx-auto max-w-3xl space-y-4 sm:space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
           <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Settings</h2>
           <p className="text-xs text-muted-foreground sm:text-sm">

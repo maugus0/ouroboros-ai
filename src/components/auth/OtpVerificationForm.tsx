@@ -106,7 +106,7 @@ export function OtpVerificationForm({ phoneNumber, onBack }: OtpVerificationForm
         </p>
       </div>
 
-      <div className="flex justify-center gap-2">
+      <div className="flex justify-center gap-1.5 sm:gap-2">
         {otp.map((digit, index) => (
           <input
             key={index}
@@ -121,7 +121,7 @@ export function OtpVerificationForm({ phoneNumber, onBack }: OtpVerificationForm
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
             disabled={isLoading}
-            className={`h-14 w-12 rounded-lg border bg-background text-center text-xl font-semibold transition-all focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${displayError ? "shake border-destructive" : "border-input"}`}
+            className={`h-12 w-10 rounded-lg border bg-background text-center text-lg font-semibold transition-all focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 sm:h-14 sm:w-12 sm:text-xl ${displayError ? "shake border-destructive" : "border-input"}`}
           />
         ))}
       </div>

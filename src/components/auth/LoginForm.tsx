@@ -8,11 +8,15 @@ import type { CountryCode } from "@/types/auth";
 import { formatE164, getDefaultCountry, validatePhoneNumber } from "@/utils/phoneUtils";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
+type LoginMode = "phone" | "username";
+
 export function LoginForm({ onToggle }: { onToggle: () => void }) {
   const { login, status, error, clearError, pendingPhone, pendingMfaPhone } = useAuth();
 
+  const [mode, setMode] = useState<LoginMode>("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [countryCode, setCountryCode] = useState<CountryCode>(getDefaultCountry());
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -20,8 +24,10 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
   const isLoading = status === "loading";
   const isPendingOtp = status === "pending_otp";
   const isPendingMfa = status === "pending_mfa";
-  const isPhoneValid = validatePhoneNumber(phoneNumber);
-  const isFormValid = isPhoneValid && password.length > 0;
+
+  const isIdentifierValid =
+    mode === "phone" ? validatePhoneNumber(phoneNumber) : username.trim().length >= 3;
+  const isFormValid = isIdentifierValid && password.length > 0;
 
   if (isPendingMfa && pendingMfaPhone) {
     return (
@@ -39,46 +45,80 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
     return <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />;
   }
 
+  const switchMode = (next: LoginMode) => {
+    setMode(next);
+    clearError();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     if (!isFormValid) return;
 
-    const e164Phone = formatE164(countryCode.dialCode, phoneNumber);
+    const payload =
+      mode === "phone"
+        ? { phone_number: formatE164(countryCode.dialCode, phoneNumber), password }
+        : { username: username.trim(), password };
 
     try {
-      await login({ phone_number: e164Phone, password });
+      await login(payload);
     } catch {
       // Error handled by context
     }
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[340px] flex-col justify-center space-y-5 sm:max-w-sm">
-      <div className="flex flex-col space-y-1.5 text-center">
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Welcome back</h1>
-        <p className="text-sm text-muted-foreground sm:text-base">Sign in to your account</p>
+    <div className="mx-auto flex w-full max-w-[320px] flex-col justify-center space-y-5 sm:max-w-sm">
+      <div className="flex flex-col space-y-1 text-center">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Welcome back!</h1>
+        <p className="text-[13px] text-muted-foreground sm:text-sm">
+          Sign in to ORB with your phone number or username.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3.5">
-        {/* Phone */}
-        <div className="space-y-1">
-          <label htmlFor="phone-input" className="text-sm font-medium">
-            Phone Number
-          </label>
-          <PhoneInput
-            value={phoneNumber}
-            countryCode={countryCode}
-            onChange={(v) => {
-              setPhoneNumber(v);
-              clearError();
-            }}
-            onCountryChange={setCountryCode}
-            disabled={isLoading}
-          />
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">
+              {mode === "phone" ? "Phone Number" : "Username"}
+            </label>
+            <button
+              type="button"
+              onClick={() => switchMode(mode === "phone" ? "username" : "phone")}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Use {mode === "phone" ? "username" : "phone"} instead
+            </button>
+          </div>
+
+          {mode === "phone" ? (
+            <PhoneInput
+              value={phoneNumber}
+              countryCode={countryCode}
+              onChange={(v) => {
+                setPhoneNumber(v);
+                clearError();
+              }}
+              onCountryChange={setCountryCode}
+              disabled={isLoading}
+            />
+          ) : (
+            <input
+              id="login-username"
+              type="text"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                clearError();
+              }}
+              disabled={isLoading}
+              placeholder="Enter your username"
+              autoComplete="username"
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            />
+          )}
         </div>
 
-        {/* Password */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <label htmlFor="login-password" className="text-sm font-medium">
@@ -123,7 +163,7 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
         <button
           type="submit"
           disabled={isLoading || !isFormValid}
-          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:text-base"
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading ? (
             <>
@@ -141,19 +181,19 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
         <button
           type="button"
           onClick={onToggle}
-          className="font-medium underline underline-offset-4 hover:text-primary"
+          className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
         >
           Create an account
         </button>
       </p>
 
-      <p className="text-center text-xs text-muted-foreground">
-        By clicking continue, you agree to our{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-primary">
+      <p className="whitespace-nowrap text-center text-[11px] text-muted-foreground">
+        By continuing, you agree to our{" "}
+        <a href="#" className="underline underline-offset-2 hover:text-primary">
           Terms of Service
         </a>{" "}
         and{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-primary">
+        <a href="#" className="underline underline-offset-2 hover:text-primary">
           Privacy Policy
         </a>
         .

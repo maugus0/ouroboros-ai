@@ -18,7 +18,8 @@ export interface ResendOTPRequest {
 }
 
 export interface LoginRequest {
-  phone_number: string;
+  phone_number?: string;
+  username?: string;
   password: string;
 }
 

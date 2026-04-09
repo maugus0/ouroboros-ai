@@ -6,7 +6,7 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function Login() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, status } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
 
   if (isLoading) {
@@ -14,6 +14,9 @@ export default function Login() {
   }
 
   if (isAuthenticated) {
+    if (status === "pending_profile") {
+      return <Navigate to="/profile/complete" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -22,12 +25,12 @@ export default function Login() {
       <button
         type="button"
         onClick={() => setIsSignUp((v) => !v)}
-        className="absolute right-4 top-4 z-30 text-sm font-medium underline-offset-4 hover:underline sm:right-6 sm:top-5 sm:text-base md:right-8 md:top-6 lg:text-foreground"
+        className="absolute right-4 top-4 z-30 text-sm font-medium underline-offset-4 hover:underline sm:right-6 sm:top-5 md:right-8 md:top-6 lg:text-foreground"
       >
         {isSignUp ? "Login" : "Register"}
       </button>
 
-      {/* Left panel — hero image (desktop only) */}
+      {/* Left panel -- hero image (desktop only) */}
       <div className="relative hidden overflow-hidden lg:flex lg:flex-col">
         <img
           src="/ouroboros.png"
@@ -49,7 +52,7 @@ export default function Login() {
               OuroborosAI
             </span>
           </div>
-          <blockquote className="max-w-md space-y-3 font-serif">
+          <blockquote className="max-w-md space-y-3">
             <p className="text-lg leading-relaxed tracking-tight text-white/95 drop-shadow-md md:text-xl lg:text-2xl">
               &ldquo;Reduce scholarship search time from weeks to minutes through our intelligent,
               coordinated AI agents.&rdquo;
@@ -61,23 +64,23 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right panel — auth form */}
-      <div className="flex min-h-svh flex-col items-center justify-center px-5 py-6 sm:px-8 sm:py-10 lg:min-h-0 lg:px-10 lg:py-12">
-        {/* Mobile brand header — more engaging */}
-        <div className="mb-5 flex flex-col items-center gap-2 sm:mb-8 lg:hidden">
+      {/* Right panel -- auth form */}
+      <div className="flex min-h-svh flex-col items-center justify-center px-4 py-8 sm:px-8 sm:py-10 lg:min-h-0 lg:px-10 lg:py-12">
+        {/* Mobile brand header */}
+        <div className="mb-6 flex flex-col items-center gap-2 sm:mb-8 lg:hidden">
           <div className="relative">
             <img
               src="/orb.jpg"
               alt=""
-              className="h-16 w-16 rounded-2xl object-cover shadow-lg ring-1 ring-border sm:h-20 sm:w-20"
+              className="h-14 w-14 rounded-2xl object-cover shadow-lg ring-1 ring-border sm:h-20 sm:w-20"
             />
             <div
-              className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background bg-green-500"
+              className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-background bg-green-500 sm:h-4 sm:w-4"
               aria-hidden="true"
             />
           </div>
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">OuroborosAI</h1>
-          <p className="max-w-[260px] text-center text-xs text-muted-foreground sm:max-w-xs sm:text-sm">
+          <h1 className="text-lg font-bold tracking-tight sm:text-2xl">OuroborosAI</h1>
+          <p className="max-w-[240px] text-center text-xs text-muted-foreground sm:max-w-xs sm:text-sm">
             Intelligent scholarship discovery & application assistance
           </p>
         </div>

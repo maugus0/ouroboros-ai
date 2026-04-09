@@ -8,12 +8,11 @@ import {
   ClipboardList,
   Settings,
   HelpCircle,
-  Search,
+  Brain,
   MoreHorizontal,
   Trash2,
   Pencil,
   CreditCard,
-  Bell,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +30,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -84,17 +84,24 @@ export function AppSidebar() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { chats, activeChatId, createChat, deleteChat, setActiveChatId } = useChat();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const chatGroups = groupChatsByDate(chats);
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   const handleNewChat = () => {
     createChat();
     navigate("/dashboard");
+    closeMobileSidebar();
   };
 
   const handleChatClick = (chatId: string) => {
     setActiveChatId(chatId);
     navigate(`/dashboard/chat/${chatId}`);
+    closeMobileSidebar();
   };
 
   return (
@@ -169,7 +176,10 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton
                     isActive={location.pathname === item.path}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => {
+                      navigate(item.path);
+                      closeMobileSidebar();
+                    }}
                     tooltip={item.label}
                   >
                     <item.icon className="h-4 w-4" />
@@ -190,7 +200,10 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   isActive={location.pathname === "/dashboard/settings"}
-                  onClick={() => navigate("/dashboard/settings")}
+                  onClick={() => {
+                    navigate("/dashboard/settings");
+                    closeMobileSidebar();
+                  }}
                   tooltip="Settings"
                 >
                   <Settings className="h-4 w-4" />
@@ -198,13 +211,27 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Search">
-                  <Search className="h-4 w-4" />
-                  <span>Search</span>
+                <SidebarMenuButton
+                  isActive={location.pathname === "/dashboard/assessments"}
+                  onClick={() => {
+                    navigate("/dashboard/assessments");
+                    closeMobileSidebar();
+                  }}
+                  tooltip="Assessments"
+                >
+                  <Brain className="h-4 w-4" />
+                  <span>Assessments</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Get Help">
+                <SidebarMenuButton
+                  isActive={location.pathname === "/dashboard/help"}
+                  onClick={() => {
+                    navigate("/dashboard/help");
+                    closeMobileSidebar();
+                  }}
+                  tooltip="Get Help"
+                >
                   <HelpCircle className="h-4 w-4" />
                   <span>Get Help</span>
                 </SidebarMenuButton>
@@ -222,11 +249,17 @@ export function AppSidebar() {
                 <SidebarMenuButton size="lg">
                   <Avatar className="h-8 w-8 rounded-xl">
                     <AvatarImage src="/shadcn.jpg" />
-                    <AvatarFallback>{user?.name ? getInitials(user.name) : "U"}</AvatarFallback>
+                    <AvatarFallback>
+                      {user ? getInitials(`${user.first_name} ${user.last_name}`) : "U"}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-semibold">{user?.name ?? "User"}</span>
-                    <span className="text-xs text-muted-foreground">{user?.email ?? ""}</span>
+                    <span className="font-semibold">
+                      {user ? `${user.first_name} ${user.last_name}` : "User"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.email ?? user?.phone_number ?? ""}
+                    </span>
                   </div>
                   <MoreHorizontal className="ml-auto h-4 w-4" />
                 </SidebarMenuButton>
@@ -235,25 +268,37 @@ export function AppSidebar() {
                 <div className="flex items-center gap-3 px-2 py-2">
                   <Avatar className="h-9 w-9 rounded-xl">
                     <AvatarImage src="/shadcn.jpg" />
-                    <AvatarFallback>{user?.name ? getInitials(user.name) : "U"}</AvatarFallback>
+                    <AvatarFallback>
+                      {user ? getInitials(`${user.first_name} ${user.last_name}`) : "U"}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col leading-tight">
-                    <span className="text-sm font-semibold">{user?.name ?? "User"}</span>
-                    <span className="text-xs text-muted-foreground">{user?.email ?? ""}</span>
+                    <span className="text-sm font-semibold">
+                      {user ? `${user.first_name} ${user.last_name}` : "User"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.email ?? user?.phone_number ?? ""}
+                    </span>
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/dashboard/profile")}>
-                  <User className="mr-2 h-4 w-4" />
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate("/dashboard/settings");
+                    closeMobileSidebar();
+                  }}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
                   Account
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate("/dashboard/billing");
+                    closeMobileSidebar();
+                  }}
+                >
                   <CreditCard className="mr-2 h-4 w-4" />
                   Billing
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
-                  <Bell className="mr-2 h-4 w-4" />
-                  Notifications
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>

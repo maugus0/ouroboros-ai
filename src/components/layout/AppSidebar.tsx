@@ -222,11 +222,17 @@ export function AppSidebar() {
                 <SidebarMenuButton size="lg">
                   <Avatar className="h-8 w-8 rounded-xl">
                     <AvatarImage src="/shadcn.jpg" />
-                    <AvatarFallback>{user?.name ? getInitials(user.name) : "U"}</AvatarFallback>
+                    <AvatarFallback>
+                      {user ? getInitials(`${user.first_name} ${user.last_name}`) : "U"}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-semibold">{user?.name ?? "User"}</span>
-                    <span className="text-xs text-muted-foreground">{user?.email ?? ""}</span>
+                    <span className="font-semibold">
+                      {user ? `${user.first_name} ${user.last_name}` : "User"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.email ?? user?.phone_number ?? ""}
+                    </span>
                   </div>
                   <MoreHorizontal className="ml-auto h-4 w-4" />
                 </SidebarMenuButton>
@@ -235,11 +241,17 @@ export function AppSidebar() {
                 <div className="flex items-center gap-3 px-2 py-2">
                   <Avatar className="h-9 w-9 rounded-xl">
                     <AvatarImage src="/shadcn.jpg" />
-                    <AvatarFallback>{user?.name ? getInitials(user.name) : "U"}</AvatarFallback>
+                    <AvatarFallback>
+                      {user ? getInitials(`${user.first_name} ${user.last_name}`) : "U"}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col leading-tight">
-                    <span className="text-sm font-semibold">{user?.name ?? "User"}</span>
-                    <span className="text-xs text-muted-foreground">{user?.email ?? ""}</span>
+                    <span className="text-sm font-semibold">
+                      {user ? `${user.first_name} ${user.last_name}` : "User"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.email ?? user?.phone_number ?? ""}
+                    </span>
                   </div>
                 </div>
                 <DropdownMenuSeparator />

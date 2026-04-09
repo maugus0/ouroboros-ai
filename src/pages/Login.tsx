@@ -6,7 +6,7 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function Login() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, status } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
 
   if (isLoading) {
@@ -14,6 +14,9 @@ export default function Login() {
   }
 
   if (isAuthenticated) {
+    if (status === "pending_profile") {
+      return <Navigate to="/profile/complete" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -27,7 +30,7 @@ export default function Login() {
         {isSignUp ? "Login" : "Register"}
       </button>
 
-      {/* Left panel — hero image (desktop only) */}
+      {/* Left panel -- hero image (desktop only) */}
       <div className="relative hidden overflow-hidden lg:flex lg:flex-col">
         <img
           src="/ouroboros.png"
@@ -61,9 +64,9 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right panel — auth form */}
+      {/* Right panel -- auth form */}
       <div className="flex min-h-svh flex-col items-center justify-center px-5 py-6 sm:px-8 sm:py-10 lg:min-h-0 lg:px-10 lg:py-12">
-        {/* Mobile brand header — more engaging */}
+        {/* Mobile brand header */}
         <div className="mb-5 flex flex-col items-center gap-2 sm:mb-8 lg:hidden">
           <div className="relative">
             <img

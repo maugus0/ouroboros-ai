@@ -14,6 +14,7 @@ import ProgramsPage from "@/pages/ProgramsPage";
 import ScholarshipsPage from "@/pages/ScholarshipsPage";
 import ApplicationsPage from "@/pages/ApplicationsPage";
 import SettingsPage from "@/pages/SettingsPage";
+import ProfileComplete from "@/pages/ProfileComplete";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,12 +30,13 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <BrowserRouter>
+          <BrowserRouter>
+            <AuthProvider>
               <Routes>
                 <Route path="/login" element={<Login />} />
 
                 <Route element={<ProtectedRoute />}>
+                  <Route path="/profile/complete" element={<ProfileComplete />} />
                   <Route element={<DashboardLayout />}>
                     <Route path="/dashboard" element={<ChatPage />} />
                     <Route path="/dashboard/chat/:chatId" element={<ChatPage />} />
@@ -49,9 +51,9 @@ export default function App() {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-            <Toaster />
-          </AuthProvider>
+              <Toaster />
+            </AuthProvider>
+          </BrowserRouter>
         </QueryClientProvider>
       </ThemeProvider>
     </ErrorBoundary>

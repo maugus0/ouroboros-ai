@@ -1,160 +1,273 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
-
-const signUpSchema = z
-  .object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Please enter a valid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type SignUpFormValues = z.infer<typeof signUpSchema>;
+import { PhoneInput } from "./PhoneInput";
+import { OtpVerificationForm } from "./OtpVerificationForm";
+import type { CountryCode } from "@/types/auth";
+import { formatE164, getDefaultCountry, validatePhoneNumber } from "@/utils/phoneUtils";
+import { Loader2, Eye, EyeOff, Check, X } from "lucide-react";
 
 export function SignUpForm({ onToggle }: { onToggle: () => void }) {
-  const { signUp } = useAuth();
-  const [error, setError] = useState<string | null>(null);
+  const { signup, status, error, clearError, pendingPhone } = useAuth();
 
-  const form = useForm<SignUpFormValues>({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [countryCode, setCountryCode] = useState<CountryCode>(getDefaultCountry());
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [touched, setTouched] = useState({
+    firstName: false,
+    lastName: false,
+    username: false,
+    phone: false,
+    password: false,
+    confirm: false,
   });
 
-  const onSubmit = async (values: SignUpFormValues) => {
-    setError(null);
+  const isLoading = status === "loading";
+  const isPendingOtp = status === "pending_otp";
+
+  const passwordRules = {
+    minLength: password.length >= 8,
+    hasUpper: /[A-Z]/.test(password),
+    hasLower: /[a-z]/.test(password),
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
+  const isPasswordValid = Object.values(passwordRules).every(Boolean);
+  const isFirstNameValid = firstName.trim().length >= 1 && firstName.trim().length <= 50;
+  const isLastNameValid = lastName.trim().length >= 1 && lastName.trim().length <= 50;
+  const isUsernameValid = /^[a-zA-Z0-9_]{3,50}$/.test(username);
+  const isPhoneValid = validatePhoneNumber(phoneNumber);
+
+  const isFormValid =
+    isFirstNameValid &&
+    isLastNameValid &&
+    isUsernameValid &&
+    isPhoneValid &&
+    isPasswordValid &&
+    password === confirmPassword;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearError();
+    if (!isFormValid) return;
+
+    const e164Phone = formatE164(countryCode.dialCode, phoneNumber);
+
     try {
-      await signUp(values.email, values.password, values.name);
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "message" in err
-          ? (err as { message: string }).message
-          : "Sign up failed. Please try again.";
-      setError(message);
+      await signup({
+        username,
+        phone_number: e164Phone,
+        password,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+      });
+    } catch {
+      // Error handled by context
     }
   };
+
+  if (isPendingOtp && pendingPhone) {
+    return (
+      <OtpVerificationForm phoneNumber={pendingPhone} onBack={() => window.location.reload()} />
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-[340px] flex-col justify-center space-y-5 sm:max-w-sm">
       <div className="flex flex-col space-y-1.5 text-center">
         <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Create an account</h1>
         <p className="text-sm text-muted-foreground sm:text-base">
-          Enter your details below to get started
+          Enter your details to get started
         </p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Name</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Your full name"
-                    autoComplete="name"
-                    className="h-10"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {/* Name */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label htmlFor="first-name" className="text-sm font-medium">
+              First Name
+            </label>
+            <input
+              id="first-name"
+              type="text"
+              value={firstName}
+              onChange={(e) => {
+                setFirstName(e.target.value);
+                clearError();
+              }}
+              onBlur={() => setTouched((t) => ({ ...t, firstName: true }))}
+              disabled={isLoading}
+              placeholder="Alice"
+              autoComplete="given-name"
+              className={`h-10 w-full rounded-lg border bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${touched.firstName && !isFirstNameValid ? "border-destructive" : "border-input"}`}
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="last-name" className="text-sm font-medium">
+              Last Name
+            </label>
+            <input
+              id="last-name"
+              type="text"
+              value={lastName}
+              onChange={(e) => {
+                setLastName(e.target.value);
+                clearError();
+              }}
+              onBlur={() => setTouched((t) => ({ ...t, lastName: true }))}
+              disabled={isLoading}
+              placeholder="Smith"
+              autoComplete="family-name"
+              className={`h-10 w-full rounded-lg border bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${touched.lastName && !isLastNameValid ? "border-destructive" : "border-input"}`}
+            />
+          </div>
+        </div>
+
+        {/* Username */}
+        <div className="space-y-1">
+          <label htmlFor="username" className="text-sm font-medium">
+            Username
+          </label>
+          <input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              clearError();
+            }}
+            onBlur={() => setTouched((t) => ({ ...t, username: true }))}
+            disabled={isLoading}
+            placeholder="your_username"
+            autoComplete="username"
+            className={`h-10 w-full rounded-lg border bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${touched.username && !isUsernameValid ? "border-destructive" : "border-input"}`}
           />
+          {touched.username && !isUsernameValid && (
+            <p className="text-xs text-destructive">
+              3-50 characters, letters, numbers, and underscores only
+            </p>
+          )}
+        </div>
 
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Email</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="name@example.com"
-                    type="email"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    autoCorrect="off"
-                    className="h-10"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+        {/* Phone */}
+        <div className="space-y-1">
+          <label htmlFor="phone-input" className="text-sm font-medium">
+            Phone Number
+          </label>
+          <PhoneInput
+            value={phoneNumber}
+            countryCode={countryCode}
+            onChange={(v) => {
+              setPhoneNumber(v);
+              clearError();
+            }}
+            onCountryChange={setCountryCode}
+            error={touched.phone && !isPhoneValid ? "Enter a valid phone number" : undefined}
+            disabled={isLoading}
           />
+        </div>
 
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Password</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Create a password"
-                    type="password"
-                    autoComplete="new-password"
-                    className="h-10"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+        {/* Password */}
+        <div className="space-y-1">
+          <label htmlFor="signup-password" className="text-sm font-medium">
+            Password
+          </label>
+          <div className="relative">
+            <input
+              id="signup-password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearError();
+              }}
+              onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+              disabled={isLoading}
+              placeholder="Create a password"
+              autoComplete="new-password"
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+
+          {touched.password && (
+            <div className="mt-2 grid grid-cols-2 gap-1 text-xs">
+              {(
+                [
+                  { key: "minLength", label: "8+ characters" },
+                  { key: "hasUpper", label: "Uppercase letter" },
+                  { key: "hasLower", label: "Lowercase letter" },
+                  { key: "hasNumber", label: "Number" },
+                  { key: "hasSpecial", label: "Special character" },
+                ] as const
+              ).map(({ key, label }) => (
+                <div
+                  key={key}
+                  className={`flex items-center gap-1 ${passwordRules[key] ? "text-green-600" : "text-muted-foreground"}`}
+                >
+                  {passwordRules[key] ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                  {label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Confirm Password */}
+        <div className="space-y-1">
+          <label htmlFor="confirmPassword" className="text-sm font-medium">
+            Confirm Password
+          </label>
+          <input
+            id="confirmPassword"
+            type={showPassword ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              clearError();
+            }}
+            onBlur={() => setTouched((t) => ({ ...t, confirm: true }))}
+            disabled={isLoading}
+            placeholder="Confirm your password"
+            autoComplete="new-password"
+            className={`h-10 w-full rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${touched.confirm && password !== confirmPassword ? "border-destructive" : "border-input"}`}
           />
+          {touched.confirm && password !== confirmPassword && (
+            <p className="text-xs text-destructive">Passwords do not match</p>
+          )}
+        </div>
 
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Confirm Password</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Confirm your password"
-                    type="password"
-                    autoComplete="new-password"
-                    className="h-10"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {error && (
+          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        )}
 
-          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-
-          <Button
-            type="submit"
-            className="h-10 w-full text-sm sm:h-11 sm:text-base"
-            disabled={form.formState.isSubmitting}
-          >
-            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Account
-          </Button>
-        </form>
-      </Form>
+        <button
+          type="submit"
+          disabled={isLoading || !isFormValid}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:text-base"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Creating account...
+            </>
+          ) : (
+            "Create Account"
+          )}
+        </button>
+      </form>
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}

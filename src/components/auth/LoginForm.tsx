@@ -1,116 +1,140 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
-
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+import { PhoneInput } from "./PhoneInput";
+import { OtpVerificationForm } from "./OtpVerificationForm";
+import { MfaVerificationForm } from "./MfaVerificationForm";
+import { ForgotPasswordForm } from "./ForgotPasswordForm";
+import type { CountryCode } from "@/types/auth";
+import { formatE164, getDefaultCountry, validatePhoneNumber } from "@/utils/phoneUtils";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export function LoginForm({ onToggle }: { onToggle: () => void }) {
-  const { login } = useAuth();
-  const [error, setError] = useState<string | null>(null);
+  const { login, status, error, clearError, pendingPhone, pendingMfaPhone } = useAuth();
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
-  });
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [countryCode, setCountryCode] = useState<CountryCode>(getDefaultCountry());
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  const onSubmit = async (values: LoginFormValues) => {
-    setError(null);
+  const isLoading = status === "loading";
+  const isPendingOtp = status === "pending_otp";
+  const isPendingMfa = status === "pending_mfa";
+  const isPhoneValid = validatePhoneNumber(phoneNumber);
+  const isFormValid = isPhoneValid && password.length > 0;
+
+  if (isPendingMfa && pendingMfaPhone) {
+    return (
+      <MfaVerificationForm maskedPhone={pendingMfaPhone} onBack={() => window.location.reload()} />
+    );
+  }
+
+  if (isPendingOtp && pendingPhone) {
+    return (
+      <OtpVerificationForm phoneNumber={pendingPhone} onBack={() => window.location.reload()} />
+    );
+  }
+
+  if (showForgotPassword) {
+    return <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearError();
+    if (!isFormValid) return;
+
+    const e164Phone = formatE164(countryCode.dialCode, phoneNumber);
+
     try {
-      await login(values.email, values.password);
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "message" in err
-          ? (err as { message: string }).message
-          : "Login failed. Please try again.";
-      setError(message);
+      await login({ phone_number: e164Phone, password });
+    } catch {
+      // Error handled by context
     }
   };
 
   return (
     <div className="mx-auto flex w-full max-w-[340px] flex-col justify-center space-y-5 sm:max-w-sm">
       <div className="flex flex-col space-y-1.5 text-center">
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-          Sign in to your account
-        </h1>
-        <p className="text-sm text-muted-foreground sm:text-base">
-          Enter your email and password below
-        </p>
+        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Welcome back</h1>
+        <p className="text-sm text-muted-foreground sm:text-base">Sign in to your account</p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3.5">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Email</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="name@example.com"
-                    type="email"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    autoCorrect="off"
-                    className="h-10"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+      <form onSubmit={handleSubmit} className="space-y-3.5">
+        {/* Phone */}
+        <div className="space-y-1">
+          <label htmlFor="phone-input" className="text-sm font-medium">
+            Phone Number
+          </label>
+          <PhoneInput
+            value={phoneNumber}
+            countryCode={countryCode}
+            onChange={(v) => {
+              setPhoneNumber(v);
+              clearError();
+            }}
+            onCountryChange={setCountryCode}
+            disabled={isLoading}
           />
+        </div>
 
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Password</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Enter your password"
-                    type="password"
-                    autoComplete="current-password"
-                    className="h-10"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {/* Password */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <label htmlFor="login-password" className="text-sm font-medium">
+              Password
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
+          <div className="relative">
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearError();
+              }}
+              disabled={isLoading}
+              placeholder="Enter your password"
+              autoComplete="current-password"
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
 
-          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+        {error && (
+          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        )}
 
-          <Button
-            type="submit"
-            className="h-10 w-full text-sm sm:h-11 sm:text-base"
-            disabled={form.formState.isSubmitting}
-          >
-            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign In with Email
-          </Button>
-        </form>
-      </Form>
+        <button
+          type="submit"
+          disabled={isLoading || !isFormValid}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:text-base"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            "Sign In"
+          )}
+        </button>
+      </form>
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}

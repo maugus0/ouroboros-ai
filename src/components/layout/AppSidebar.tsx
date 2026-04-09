@@ -30,6 +30,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -83,17 +84,24 @@ export function AppSidebar() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { chats, activeChatId, createChat, deleteChat, setActiveChatId } = useChat();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const chatGroups = groupChatsByDate(chats);
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   const handleNewChat = () => {
     createChat();
     navigate("/dashboard");
+    closeMobileSidebar();
   };
 
   const handleChatClick = (chatId: string) => {
     setActiveChatId(chatId);
     navigate(`/dashboard/chat/${chatId}`);
+    closeMobileSidebar();
   };
 
   return (
@@ -168,7 +176,10 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton
                     isActive={location.pathname === item.path}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => {
+                      navigate(item.path);
+                      closeMobileSidebar();
+                    }}
                     tooltip={item.label}
                   >
                     <item.icon className="h-4 w-4" />
@@ -189,7 +200,10 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   isActive={location.pathname === "/dashboard/settings"}
-                  onClick={() => navigate("/dashboard/settings")}
+                  onClick={() => {
+                    navigate("/dashboard/settings");
+                    closeMobileSidebar();
+                  }}
                   tooltip="Settings"
                 >
                   <Settings className="h-4 w-4" />
@@ -199,7 +213,10 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   isActive={location.pathname === "/dashboard/assessments"}
-                  onClick={() => navigate("/dashboard/assessments")}
+                  onClick={() => {
+                    navigate("/dashboard/assessments");
+                    closeMobileSidebar();
+                  }}
                   tooltip="Assessments"
                 >
                   <Brain className="h-4 w-4" />
@@ -209,7 +226,10 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   isActive={location.pathname === "/dashboard/help"}
-                  onClick={() => navigate("/dashboard/help")}
+                  onClick={() => {
+                    navigate("/dashboard/help");
+                    closeMobileSidebar();
+                  }}
                   tooltip="Get Help"
                 >
                   <HelpCircle className="h-4 w-4" />
@@ -262,11 +282,21 @@ export function AppSidebar() {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate("/dashboard/settings");
+                    closeMobileSidebar();
+                  }}
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   Account
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/dashboard/billing")}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate("/dashboard/billing");
+                    closeMobileSidebar();
+                  }}
+                >
                   <CreditCard className="mr-2 h-4 w-4" />
                   Billing
                 </DropdownMenuItem>

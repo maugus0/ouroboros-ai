@@ -204,22 +204,22 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <Label htmlFor="mfa-toggle" className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-primary" />
-                  <span className="text-sm">Two-factor authentication (2FA)</span>
-                </div>
-                <span className="text-xs font-normal text-muted-foreground">
-                  Require a one-time code sent to your phone on every login.
-                </span>
-              </Label>
-              <Switch
-                id="mfa-toggle"
-                checked={user?.mfa_enabled ?? false}
-                onCheckedChange={handleMfaToggle}
-                disabled={mfaLoading || !user?.phone_verified}
-              />
+            <div className="space-y-3 sm:space-y-0">
+              <div className="flex items-center justify-between gap-4">
+                <Label htmlFor="mfa-toggle" className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="text-sm font-medium">Two-factor Authentication (2FA)</span>
+                </Label>
+                <Switch
+                  id="mfa-toggle"
+                  checked={user?.mfa_enabled ?? false}
+                  onCheckedChange={handleMfaToggle}
+                  disabled={mfaLoading || !user?.phone_verified}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground sm:pl-6">
+                Require a one-time code sent to your phone on every login.
+              </p>
             </div>
             {!user?.phone_verified && (
               <p className="text-xs text-amber-600 dark:text-amber-400">

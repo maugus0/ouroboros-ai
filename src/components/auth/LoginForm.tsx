@@ -187,7 +187,7 @@ export function LoginForm({ onToggle }: { onToggle: () => void }) {
         </button>
       </p>
 
-      <p className="whitespace-nowrap text-center text-[11px] text-muted-foreground">
+      <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
         By continuing, you agree to our{" "}
         <a href="#" className="underline underline-offset-2 hover:text-primary">
           Terms of Service

@@ -293,7 +293,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const userData = await authApi.getCurrentUser();
       setUser(userData);
-      setStatus(userData.profile_completed ? "authenticated" : "pending_profile");
+      if (userData.profile_completed) {
+        clearProfileSkip();
+        setStatus("authenticated");
+      } else if (hasProfileSkip()) {
+        setStatus("authenticated");
+      } else {
+        setStatus("pending_profile");
+      }
     } catch {
       // Silently fail; interceptors handle token expiration
     }

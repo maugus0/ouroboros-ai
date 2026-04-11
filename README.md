@@ -1,16 +1,16 @@
 # OuroborosAI
 
-React + Vite + TypeScript frontend for **OuroborosAI** — a Multi-Agent AI System for Scholarship Discovery & Application Assistance (NUS ISS Team 17). Uses React Router for navigation, TanStack Query for server state, and **shadcn/ui** (Radix) + Tailwind CSS for UI.
+React + Vite + TypeScript frontend for **OuroborosAI** — a Multi-Agent AI System for Scholarship Discovery & Application Assistance (NUS ISS Team 17). Uses React Router for navigation, **Axios** for HTTP (with JWT refresh), **TanStack Query** wired at the app root (available for future server-state), and **shadcn/ui** (Radix) + Tailwind CSS for UI.
 
 ## What's in the app
 
-- **Auth**: Login and Register at `/login` with protected routes; mock auth (e.g. `admin@ouroboros.ai` / `admin`) until backend is ready.
+- **Auth**: Login and registration at `/login` with protected routes. The app talks to the **Ouroboros Orchestrator** backend: phone-based signup with OTP, login (username or phone + password), optional MFA, token refresh, and profile completion at `/profile/complete` when required.
 - **Dashboard**: After login, users land on an agentic AI chat interface (Claude-style):
-  - **Sidebar**: OuroborosAI branding, New Chat, conversation history grouped by date, nav (Profile, Programs, Scholarships, Applications), Settings / Get Help / Search, and user block at bottom (avatar, name, email, dropdown: Account, Billing, Notifications, Log out).
-  - **Chat**: Empty state with suggestion cards; message bubbles (user + assistant with markdown); typing indicator; input bar with file attach and send.
-  - **Pages**: Profile, Programs, Scholarships, Applications (card layout on mobile, table on desktop), Settings (notifications + dark mode toggle).
-- **Theming**: Dark/light mode via `ThemeContext`; preference persisted in `localStorage`; Settings page toggle.
-- **API**: Configurable via Vite env vars (`VITE_API_BASE_URL`, `VITE_API_VERSION`); dev default: `http://localhost:8000`.
+  - **Sidebar**: OuroborosAI branding, **New Chat**, **Starred** chats, **Projects** (folders with nested chats), **recent chats** grouped by date (unassigned only), nav (Profile, Programs, Scholarships, Applications), Settings / Assessments / Get Help, and a user block at the bottom (avatar, truncated name/email with tooltips, dropdown: Account, Billing, Log out).
+  - **Chat**: Empty state with suggestion cards; message bubbles (user + assistant with markdown); typing indicator while the assistant responds; input bar with attach (UI) and send. Messages, stars, and projects are loaded from the **backend** (`/api/v1/chats`, `/api/v1/projects`).
+  - **Pages**: Profile, Programs, Scholarships, Applications (card on mobile, table on desktop where applicable), Settings (including dark mode), Get Help, Assessments, Billing.
+- **Theming**: Dark/light mode via `ThemeContext`; preference persisted in `localStorage`; Settings page can align with the same preference.
+- **API**: Configurable via Vite env vars (`VITE_API_BASE_URL`, `VITE_API_VERSION`). HTTP calls use `src/api/client.ts` (base URL = orchestrator host; paths include `/api/v1/...`). Default base URL in dev: `http://localhost:8000`.
 
 ## Prerequisites
 
@@ -43,41 +43,56 @@ Dev server runs at **http://localhost:8080** (see `vite.config.ts`).
 
 ## Environment variables
 
-The app reads env vars via Vite (`import.meta.env`) and centralizes them in `src/config/env.ts`.
+The app reads env vars via Vite (`import.meta.env`). Shared values are centralized in `src/config/env.ts` (including derived `API_URL` for logging and future use).
 
-| Variable              | Description        | Default                  |
-|-----------------------|--------------------|--------------------------|
-| `VITE_API_BASE_URL`   | Backend base URL   | `http://localhost:8000`  |
-| `VITE_API_VERSION`   | API version path   | `v1`                     |
+| Variable               | Description                          | Default                 |
+|------------------------|--------------------------------------|-------------------------|
+| `VITE_API_BASE_URL`    | Orchestrator backend base URL       | `http://localhost:8000` |
+| `VITE_API_VERSION`     | API version segment (`/api/{ver}`) | `v1`                    |
+| `VITE_APP_VERSION`     | Release label (CI sets from git tag) | empty in local dev      |
 
 ## Routing (React Router)
 
 Defined in `src/App.tsx`:
 
-| Route                    | Description                    |
-|--------------------------|--------------------------------|
-| `/`                      | Redirects to `/dashboard`      |
-| `/login`                 | Login / Register (public)      |
-| `/dashboard`             | Chat (default); new chat       |
-| `/dashboard/chat/:chatId`| Existing conversation          |
-| `/dashboard/profile`     | Student profile                |
-| `/dashboard/programs`     | Discovered programs            |
-| `/dashboard/scholarships` | Matched scholarships           |
-| `/dashboard/applications` | Application tracker            |
-| `/dashboard/settings`    | User settings (e.g. dark mode) |
-| `*`                      | 404 → NotFound                 |
+| Route                       | Description                                      |
+|-----------------------------|--------------------------------------------------|
+| `/`                         | Redirects to `/dashboard`                        |
+| `/login`                    | Login / Register (public)                        |
+| `/profile/complete`         | Profile completion (protected, outside dashboard shell) |
+| `/dashboard`                | Chat — new or empty conversation                 |
+| `/dashboard/chat/:chatId`   | Existing conversation                            |
+| `/dashboard/profile`        | Student profile                                  |
+| `/dashboard/programs`       | Discovered programs                              |
+| `/dashboard/scholarships`   | Matched scholarships                             |
+| `/dashboard/applications`   | Application tracker                              |
+| `/dashboard/settings`       | User settings (e.g. dark mode)                   |
+| `/dashboard/help`          | Get Help                                         |
+| `/dashboard/assessments`   | Assessments                                      |
+| `/dashboard/billing`       | Billing                                          |
+| `*`                         | 404 → NotFound                                   |
 
-All `/dashboard/*` routes are protected and wrapped by `DashboardLayout` (sidebar + main content). Protection is in `src/components/ProtectedRoute.tsx`.
+**Protected routes**: `ProtectedRoute` wraps authenticated routes, redirects to `/login` if unauthenticated, and to `/profile/complete` when the user must finish their profile. **`DashboardLayout`** wraps only `/dashboard/*` (sidebar + main + `ProjectProvider` + `ChatProvider`).
 
 ## Project structure
 
 ```
 src/
+  api/                    # Axios instance + API modules
+    client.ts             # Base client, JWT attach/refresh, getErrorMessage
+    authApi.ts
+    chatsApi.ts           # Chats, messages, star, project assignment
+    projectsApi.ts        # Projects CRUD
   components/
-    auth/           # LoginForm, SignUpForm
-    chat/           # ChatEmptyState, ChatInput, ChatMessages, MessageBubble, TypingIndicator
-    layout/         # DashboardLayout, AppSidebar, DashboardHeader
-    ui/             # shadcn/ui (button, card, form, sidebar, avatar, etc.)
+    auth/                 # Login, signup, OTP, MFA, profile completion, etc.
+    chat/                 # ChatEmptyState, ChatInput, ChatMessages, MessageBubble, TypingIndicator
+    dialogs/              # CreateProjectDialog, RenameProject/Chat dialogs
+    layout/
+      DashboardLayout.tsx # ProjectProvider → ChatProvider → sidebar shell
+      AppSidebar.tsx
+      DashboardHeader.tsx
+      sidebar/            # StarredChats, ProjectList, ChatHistory
+    ui/                   # shadcn/ui primitives
     ErrorBoundary.tsx
     LoadingSpinner.tsx
     ProtectedRoute.tsx
@@ -85,37 +100,74 @@ src/
     env.ts
   contexts/
     AuthContext.tsx
-    ChatContext.tsx
+    ChatContext.tsx       # Chats/messages; calls chatsApi
+    ProjectContext.tsx    # Projects; calls projectsApi
     ThemeContext.tsx
   hooks/
     use-mobile.tsx
     use-toast.ts
   lib/
-    api/
-      client.ts
-      endpoints.ts
-    mock-data.ts
-    utils.ts
+    utils.ts              # cn(), getInitials(), etc.
+    mock-data.ts          # Placeholder (no mock chats; real API in use)
   pages/
     Login.tsx
     ChatPage.tsx
+    ProfileComplete.tsx
     ProfilePage.tsx
     ProgramsPage.tsx
     ScholarshipsPage.tsx
     ApplicationsPage.tsx
     SettingsPage.tsx
+    GetHelpPage.tsx
+    AssessmentsPage.tsx
+    BillingPage.tsx
     NotFound.tsx
-  services/
-    auth.ts
   types/
+    auth.ts
+    chat.types.ts         # Chat, Message, Project types aligned with Orchestrator API
     api.types.ts
-    auth.types.ts
-    chat.types.ts
+  utils/
+    tokenStorage.ts
+    dateUtils.ts
+    phoneUtils.ts
   App.tsx
   main.tsx
   index.css
   vite-env.d.ts
 ```
+
+## Backend integration (Orchestrator)
+
+The UI expects the **Ouroboros Orchestrator** OpenAPI surface under `{VITE_API_BASE_URL}/api/v1`, including:
+
+- **Chats**: create/list/get/patch/delete chat; list/send messages; filters for starred, `project_id`, `no_project`.
+- **Projects**: create/list/get/patch/delete project; chats can be assigned or removed via chat `PATCH`.
+
+Auth uses the same host for `/auth/*` and refresh as configured in `client.ts`.
+
+## Error handling
+
+The app uses a consistent error-handling pattern:
+
+- **Context methods** (`ChatContext`, `ProjectContext`) wrap API calls in `try/catch`, update the context `error` state via `setError(getErrorMessage(err))`, and rethrow so callers can respond.
+- **UI components** (sidebar actions, dialogs) catch errors from context methods and show **toast notifications** (via Sonner) with user-friendly messages.
+- **Async clipboard** (`navigator.clipboard.writeText`) is awaited and wrapped in try/catch with success/error toasts.
+- **Dialog forms** (create project, rename chat/project) show error toasts on failure and only close on success.
+
+This ensures users receive immediate feedback on both success and failure without silent errors or unhandled promise rejections.
+
+## Input validation
+
+Client-side validation mirrors backend constraints (defined in `src/types/chat.types.ts`):
+
+| Field                   | Max Length | Notes                                           |
+|-------------------------|------------|-------------------------------------------------|
+| Message content         | 10,000     | Character count shown when approaching limit    |
+| Chat title              | 200        | Rename dialog enforces limit                    |
+| Project name            | 100        | Create/rename dialogs enforce limit             |
+| Project description     | 500        | Create dialog enforces limit                    |
+
+All inputs are trimmed before submission. The send button and submit buttons are disabled when validation fails.
 
 ## Scripts
 
@@ -203,11 +255,12 @@ Nginx is configured in `nginx.conf` for SPA routing (`try_files ... /index.html`
 - Vite 8
 - Tailwind CSS, shadcn/ui, Radix UI
 - React Router v7
-- TanStack Query
+- TanStack Query (root `QueryClientProvider`; chat/projects use **React Context + Axios**)
+- Axios (auth + chats + projects)
 - Sonner (toast notifications)
 - react-markdown, remark-gfm (chat messages)
 - react-textarea-autosize (chat input)
-- Vitest (unit tests)
+- Vitest (unit tests; `passWithNoTests` enabled)
 
 ## What not to commit
 

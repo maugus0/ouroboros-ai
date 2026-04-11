@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MessageBubble } from "@/components/chat/MessageBubble";
@@ -9,9 +9,10 @@ interface ChatMessagesProps {
   messages: Message[];
   isStreaming: boolean;
   userName?: string;
+  onRegenerate?: () => void;
 }
 
-export function ChatMessages({ messages, isStreaming, userName }: ChatMessagesProps) {
+export function ChatMessages({ messages, isStreaming, userName, onRegenerate }: ChatMessagesProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -31,12 +32,27 @@ export function ChatMessages({ messages, isStreaming, userName }: ChatMessagesPr
     setShowScrollButton(distanceFromBottom > 100);
   };
 
+  const lastAssistantMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant") {
+        return messages[i].id;
+      }
+    }
+    return null;
+  }, [messages]);
+
   return (
     <div className="relative flex-1 overflow-hidden">
       <div ref={containerRef} onScroll={handleScroll} className="h-full overflow-y-auto">
         <div className="mx-auto max-w-3xl py-4">
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} userName={userName} />
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              userName={userName}
+              onRegenerate={onRegenerate}
+              isLastAssistantMessage={msg.id === lastAssistantMessageId}
+            />
           ))}
           {isStreaming && <TypingIndicator />}
           <div ref={bottomRef} />

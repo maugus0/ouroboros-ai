@@ -9,25 +9,26 @@ const suggestions = [
     icon: Upload,
     title: "Upload my CV",
     description: "for analysis and feedback",
-    prompt: "I'd like to upload my CV for analysis and feedback",
+    prompt: "I'd like to upload my CV for processing, analysis and feedback on ORB.",
   },
   {
     icon: Search,
     title: "Find scholarships",
     description: "matching my profile",
-    prompt: "Find scholarships matching my profile for a Master's degree",
+    prompt: "Find scholarships matching my Student Profile on ORB.",
   },
   {
     icon: UserCheck,
     title: "Review my profile",
     description: "and suggest improvements",
-    prompt: "Review my student profile and suggest improvements",
+    prompt: "Review my student profile on ORB and suggest improvements for my resume.",
   },
   {
     icon: FileText,
     title: "Draft a Statement",
     description: "of Purpose for applications",
-    prompt: "Help me draft a Statement of Purpose for my graduate application",
+    prompt:
+      "Help me draft a Statement of Purpose for my application based on details stored with ORB.",
   },
 ];
 

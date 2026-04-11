@@ -1,7 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   MessageSquarePlus,
-  MessageSquare,
   User,
   GraduationCap,
   Trophy,
@@ -10,8 +9,6 @@ import {
   HelpCircle,
   Brain,
   MoreHorizontal,
-  Trash2,
-  Pencil,
   CreditCard,
   LogOut,
 } from "lucide-react";
@@ -21,14 +18,13 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuButton,
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -41,36 +37,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getInitials } from "@/lib/utils";
-
-function groupChatsByDate(
-  chats: ReturnType<typeof useChat>["chats"]
-): { label: string; chats: typeof chats }[] {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today.getTime() - 86400000);
-  const sevenDaysAgo = new Date(today.getTime() - 7 * 86400000);
-  const thirtyDaysAgo = new Date(today.getTime() - 30 * 86400000);
-
-  const groups: { label: string; chats: typeof chats }[] = [
-    { label: "Today", chats: [] },
-    { label: "Yesterday", chats: [] },
-    { label: "Previous 7 days", chats: [] },
-    { label: "Previous 30 days", chats: [] },
-    { label: "Older", chats: [] },
-  ];
-
-  for (const chat of chats) {
-    const d = new Date(chat.updatedAt);
-    if (d >= today) groups[0].chats.push(chat);
-    else if (d >= yesterday) groups[1].chats.push(chat);
-    else if (d >= sevenDaysAgo) groups[2].chats.push(chat);
-    else if (d >= thirtyDaysAgo) groups[3].chats.push(chat);
-    else groups[4].chats.push(chat);
-  }
-
-  return groups.filter((g) => g.chats.length > 0);
-}
+import { StarredChats } from "./sidebar/StarredChats";
+import { ProjectList } from "./sidebar/ProjectList";
+import { ChatHistory } from "./sidebar/ChatHistory";
 
 const navItems = [
   { label: "Profile", icon: User, path: "/dashboard/profile" },
@@ -83,18 +54,15 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { chats, activeChatId, createChat, deleteChat, setActiveChatId } = useChat();
+  const { activeChatId, createChat, setActiveChatId } = useChat();
   const { isMobile, setOpenMobile } = useSidebar();
-
-  const chatGroups = groupChatsByDate(chats);
 
   const closeMobileSidebar = () => {
     if (isMobile) setOpenMobile(false);
   };
 
-  const handleNewChat = () => {
-    createChat();
-    navigate("/dashboard");
+  const handleNewChat = async () => {
+    await createChat();
     closeMobileSidebar();
   };
 
@@ -104,12 +72,15 @@ export function AppSidebar() {
     closeMobileSidebar();
   };
 
+  const userName = user ? `${user.first_name} ${user.last_name}`.trim() : "User";
+  const userIdentifier = user?.email ?? user?.phone_number ?? "";
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <img src="/orb.jpg" alt="" className="h-8 w-8 rounded-full object-cover" />
-          <span className="text-lg font-semibold tracking-tight">OuroborosAI</span>
+          <span className="text-lg font-semibold tracking-tight">Ouroboros</span>
         </div>
       </SidebarHeader>
 
@@ -121,49 +92,16 @@ export function AppSidebar() {
       </div>
 
       <SidebarContent>
-        {/* Chat history */}
-        {chatGroups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.chats.map((chat) => (
-                  <SidebarMenuItem key={chat.id}>
-                    <SidebarMenuButton
-                      isActive={activeChatId === chat.id}
-                      onClick={() => handleChatClick(chat.id)}
-                      tooltip={chat.title}
-                    >
-                      <MessageSquare className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{chat.title}</span>
-                    </SidebarMenuButton>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction showOnHover>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </SidebarMenuAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="start">
-                        <DropdownMenuItem>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => deleteChat(chat.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {/* Starred Chats */}
+        <StarredChats onChatClick={handleChatClick} activeChatId={activeChatId} />
+
+        {/* Projects */}
+        <ProjectList onChatClick={handleChatClick} activeChatId={activeChatId} />
+
+        <SidebarSeparator />
+
+        {/* Chat History (unassigned chats) */}
+        <ChatHistory onChatClick={handleChatClick} activeChatId={activeChatId} />
 
         <SidebarSeparator />
 
@@ -246,38 +184,54 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg">
-                  <Avatar className="h-8 w-8 rounded-xl">
+                <SidebarMenuButton size="lg" className="w-full">
+                  <Avatar className="h-8 w-8 shrink-0 rounded-xl">
                     <AvatarImage src="/shadcn.jpg" />
-                    <AvatarFallback>
-                      {user ? getInitials(`${user.first_name} ${user.last_name}`) : "U"}
-                    </AvatarFallback>
+                    <AvatarFallback>{getInitials(userName)}</AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-semibold">
-                      {user ? `${user.first_name} ${user.last_name}` : "User"}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {user?.email ?? user?.phone_number ?? ""}
-                    </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5 leading-none">
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="truncate font-semibold">{userName}</span>
+                        </TooltipTrigger>
+                        {userName.length > 18 && (
+                          <TooltipContent side="top" align="start">
+                            {userName}
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {userIdentifier}
+                          </span>
+                        </TooltipTrigger>
+                        {userIdentifier.length > 22 && (
+                          <TooltipContent side="top" align="start">
+                            {userIdentifier}
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-                  <MoreHorizontal className="ml-auto h-4 w-4" />
+                  <MoreHorizontal className="ml-auto h-4 w-4 shrink-0" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-[--radix-dropdown-menu-trigger-width]">
                 <div className="flex items-center gap-3 px-2 py-2">
-                  <Avatar className="h-9 w-9 rounded-xl">
+                  <Avatar className="h-9 w-9 shrink-0 rounded-xl">
                     <AvatarImage src="/shadcn.jpg" />
-                    <AvatarFallback>
-                      {user ? getInitials(`${user.first_name} ${user.last_name}`) : "U"}
-                    </AvatarFallback>
+                    <AvatarFallback>{getInitials(userName)}</AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col leading-tight">
-                    <span className="text-sm font-semibold">
-                      {user ? `${user.first_name} ${user.last_name}` : "User"}
+                  <div className="flex min-w-0 flex-1 flex-col leading-tight">
+                    <span className="truncate text-sm font-semibold" title={userName}>
+                      {userName}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {user?.email ?? user?.phone_number ?? ""}
+                    <span className="truncate text-xs text-muted-foreground" title={userIdentifier}>
+                      {userIdentifier}
                     </span>
                   </div>
                 </div>

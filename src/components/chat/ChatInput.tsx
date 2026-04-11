@@ -52,7 +52,7 @@ export function ChatInput({ onSend, isStreaming }: ChatInputProps) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message OuroborosAI..."
+            placeholder="Message Ouroboros..."
             maxRows={6}
             className="flex-1 resize-none bg-transparent py-1.5 text-sm outline-none placeholder:text-muted-foreground"
           />

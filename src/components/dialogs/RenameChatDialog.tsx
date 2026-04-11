@@ -54,18 +54,22 @@ export function RenameChatDialog({ chat, open, onOpenChange }: RenameChatDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Rename Chat</DialogTitle>
-          <DialogDescription>Give your conversation a new name.</DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Rename Chat</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
+            Give your conversation a new name.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="rename-chat-title">Title</Label>
+              <Label htmlFor="rename-chat-title" className="text-xs sm:text-sm">
+                Title
+              </Label>
               {trimmedTitle.length > CHAT_TITLE_MAX_LENGTH * 0.8 && (
                 <span
-                  className={`text-xs tabular-nums ${
+                  className={`text-[10px] tabular-nums sm:text-xs ${
                     trimmedTitle.length > CHAT_TITLE_MAX_LENGTH
                       ? "text-destructive"
                       : "text-muted-foreground"
@@ -80,15 +84,27 @@ export function RenameChatDialog({ chat, open, onOpenChange }: RenameChatDialogP
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={CHAT_TITLE_MAX_LENGTH + 10}
+              className="text-sm"
               autoFocus
               required
             />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="sm:size-default"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={!isTitleValid || isSubmitting}>
+            <Button
+              type="submit"
+              size="sm"
+              className="sm:size-default"
+              disabled={!isTitleValid || isSubmitting}
+            >
               {isSubmitting ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>

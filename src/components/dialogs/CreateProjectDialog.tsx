@@ -78,20 +78,22 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Project</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Create Project</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             Create a project to organize your chats into groups.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="project-name">Name</Label>
+              <Label htmlFor="project-name" className="text-xs sm:text-sm">
+                Name
+              </Label>
               {trimmedName.length > PROJECT_NAME_MAX_LENGTH * 0.8 && (
                 <span
-                  className={`text-xs tabular-nums ${
+                  className={`text-[10px] tabular-nums sm:text-xs ${
                     trimmedName.length > PROJECT_NAME_MAX_LENGTH
                       ? "text-destructive"
                       : "text-muted-foreground"
@@ -107,16 +109,19 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={PROJECT_NAME_MAX_LENGTH + 10}
+              className="text-sm"
               autoFocus
               required
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="project-description">Description (optional)</Label>
+              <Label htmlFor="project-description" className="text-xs sm:text-sm">
+                Description (optional)
+              </Label>
               {trimmedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH * 0.8 && (
                 <span
-                  className={`text-xs tabular-nums ${
+                  className={`text-[10px] tabular-nums sm:text-xs ${
                     trimmedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH
                       ? "text-destructive"
                       : "text-muted-foreground"
@@ -132,17 +137,18 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={PROJECT_DESCRIPTION_MAX_LENGTH + 10}
+              className="text-sm"
               rows={2}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Color</Label>
-            <div className="flex gap-2">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Color</Label>
+            <div className="flex flex-wrap gap-2">
               {COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
-                  className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
+                  className={`h-6 w-6 shrink-0 rounded-full border-2 transition-transform hover:scale-110 sm:h-7 sm:w-7 ${
                     color === c ? "scale-110 border-foreground" : "border-transparent"
                   }`}
                   style={{ backgroundColor: c }}
@@ -151,11 +157,22 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               ))}
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="sm:size-default"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={!isNameValid || !isDescriptionValid || isSubmitting}>
+            <Button
+              type="submit"
+              size="sm"
+              className="sm:size-default"
+              disabled={!isNameValid || !isDescriptionValid || isSubmitting}
+            >
               {isSubmitting ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>

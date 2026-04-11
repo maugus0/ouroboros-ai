@@ -8,6 +8,7 @@ import {
   Trash2,
   MessageSquare,
   MessageSquarePlus,
+  Info,
   GraduationCap,
   Briefcase,
   BookOpen,
@@ -48,6 +49,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateProjectDialog } from "@/components/dialogs/CreateProjectDialog";
 import { EditProjectDialog } from "@/components/dialogs/EditProjectDialog";
+import { ProjectDetailsDialog } from "@/components/dialogs/ProjectDetailsDialog";
 import type { Project } from "@/types/chat.types";
 
 const PROJECT_ICONS: Record<string, LucideIcon> = {
@@ -82,6 +84,7 @@ export function ProjectList({ onChatClick, activeChatId }: ProjectListProps) {
   const { chats, createChat, unassignChatsFromProject } = useChat();
   const [createOpen, setCreateOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
+  const [detailsProject, setDetailsProject] = useState<Project | null>(null);
 
   const getProjectChats = (projectId: string) => chats.filter((c) => c.project_id === projectId);
 
@@ -146,15 +149,19 @@ export function ProjectList({ onChatClick, activeChatId }: ProjectListProps) {
                           </SidebarMenuAction>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent side="right" align="start">
+                          <DropdownMenuItem onClick={() => setDetailsProject(project)}>
+                            <Info className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleNewChatInProject(project.id)}>
                             <MessageSquarePlus className="mr-2 h-4 w-4" />
                             New Chat
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setEditProject(project)}>
                             <Settings className="mr-2 h-4 w-4" />
                             Edit Project
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => handleDeleteProject(project.id)}
@@ -205,6 +212,11 @@ export function ProjectList({ onChatClick, activeChatId }: ProjectListProps) {
         project={editProject}
         open={editProject !== null}
         onOpenChange={(open) => !open && setEditProject(null)}
+      />
+      <ProjectDetailsDialog
+        project={detailsProject}
+        open={detailsProject !== null}
+        onOpenChange={(open) => !open && setDetailsProject(null)}
       />
     </>
   );

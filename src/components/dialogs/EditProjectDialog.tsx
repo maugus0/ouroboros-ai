@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useProjects } from "@/contexts/ProjectContext";
 import { getErrorMessage } from "@/api/client";
+import { formatDate } from "@/lib/utils";
 import { PROJECT_NAME_MAX_LENGTH, PROJECT_DESCRIPTION_MAX_LENGTH } from "@/types/chat.types";
 import type { Project } from "@/types/chat.types";
 import {
@@ -114,42 +115,38 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
   const selectedIcon = ICONS.find((i) => i.id === icon);
   const IconComponent = selectedIcon?.Icon ?? Folder;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-[calc(100vw-2rem)] overflow-hidden sm:max-w-md">
         <DialogHeader>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div
-              className="flex h-10 w-10 items-center justify-center rounded-lg"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10"
               style={{ backgroundColor: color + "20", color }}
             >
-              <IconComponent className="h-5 w-5" />
+              <IconComponent className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
-              <DialogTitle>Edit Project</DialogTitle>
-              <DialogDescription>Update project details and appearance.</DialogDescription>
+            <div className="min-w-0">
+              <DialogTitle className="truncate text-base sm:text-lg">Edit Project</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm">
+                Update project details and appearance.
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="edit-project-name">Name</Label>
+              <Label htmlFor="edit-project-name" className="text-xs sm:text-sm">
+                Name
+              </Label>
               {trimmedName.length > PROJECT_NAME_MAX_LENGTH * 0.8 && (
                 <span
-                  className={`text-xs tabular-nums ${
+                  className={`text-[10px] tabular-nums sm:text-xs ${
                     trimmedName.length > PROJECT_NAME_MAX_LENGTH
                       ? "text-destructive"
                       : "text-muted-foreground"
@@ -165,17 +162,20 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={PROJECT_NAME_MAX_LENGTH + 10}
+              className="text-sm"
               autoFocus
               required
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="edit-project-description">Description</Label>
+              <Label htmlFor="edit-project-description" className="text-xs sm:text-sm">
+                Description
+              </Label>
               {trimmedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH * 0.8 && (
                 <span
-                  className={`text-xs tabular-nums ${
+                  className={`text-[10px] tabular-nums sm:text-xs ${
                     trimmedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH
                       ? "text-destructive"
                       : "text-muted-foreground"
@@ -191,18 +191,19 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={PROJECT_DESCRIPTION_MAX_LENGTH + 10}
-              rows={3}
+              className="text-sm"
+              rows={2}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Color</Label>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Color</Label>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
-                  className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 ${
+                  className={`h-6 w-6 shrink-0 rounded-full border-2 transition-transform hover:scale-110 sm:h-7 sm:w-7 ${
                     color === c ? "scale-110 border-foreground" : "border-transparent"
                   }`}
                   style={{ backgroundColor: c }}
@@ -213,14 +214,14 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Icon</Label>
-            <div className="flex flex-wrap gap-1.5">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Icon</Label>
+            <div className="flex flex-wrap gap-1">
               {ICONS.map(({ id, Icon, label }) => (
                 <button
                   key={id}
                   type="button"
-                  className={`flex h-8 w-8 items-center justify-center rounded-md border transition-colors ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors sm:h-8 sm:w-8 ${
                     icon === id
                       ? "border-foreground bg-accent"
                       : "border-transparent hover:bg-accent"
@@ -228,12 +229,15 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
                   onClick={() => setIcon(id)}
                   title={label}
                 >
-                  <Icon className="h-4 w-4" style={{ color: icon === id ? color : undefined }} />
+                  <Icon
+                    className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                    style={{ color: icon === id ? color : undefined }}
+                  />
                 </button>
               ))}
               <button
                 type="button"
-                className={`flex h-8 w-8 items-center justify-center rounded-md border text-xs transition-colors ${
+                className={`flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors sm:h-8 sm:w-8 ${
                   icon === null
                     ? "border-foreground bg-accent"
                     : "border-transparent hover:bg-accent"
@@ -249,24 +253,32 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
           {project && (
             <>
               <Separator />
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-muted-foreground sm:text-xs">
                 <span>
                   {project.chat_count} {project.chat_count === 1 ? "chat" : "chats"}
                 </span>
-                <span>Created {formatDate(project.created_at)}</span>
+                <span className="truncate">Created {formatDate(project.created_at)}</span>
               </div>
             </>
           )}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="sm:size-default"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button
               type="submit"
+              size="sm"
+              className="sm:size-default"
               disabled={!isNameValid || !isDescriptionValid || !hasChanges || isSubmitting}
             >
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {isSubmitting ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </form>

@@ -19,6 +19,7 @@ interface ChatContextValue {
   activeChatId: string | null;
   messages: Message[];
   isLoading: boolean;
+  isLoadingMessages: boolean;
   isStreaming: boolean;
   error: string | null;
 
@@ -45,6 +46,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,13 +76,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const loadMessages = useCallback(async (chatId: string) => {
     setError(null);
+    setIsLoadingMessages(true);
     try {
       const response = await chatsApi.getMessages(chatId, { limit: 100, order: "asc" });
       setMessages(response.messages);
     } catch (err) {
       console.error("Failed to load messages:", err);
-      setError(getErrorMessage(err));
-      setMessages([]);
+      const errorMsg = getErrorMessage(err);
+      setError(errorMsg);
+    } finally {
+      setIsLoadingMessages(false);
     }
   }, []);
 
@@ -90,6 +95,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     (id: string | null) => {
       setActiveChatIdState(id);
       if (id) {
+        setMessages([]);
         loadMessages(id);
       } else {
         setMessages([]);
@@ -269,6 +275,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       activeChatId,
       messages,
       isLoading,
+      isLoadingMessages,
       isStreaming,
       error,
       fetchChats,
@@ -290,6 +297,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       activeChatId,
       messages,
       isLoading,
+      isLoadingMessages,
       isStreaming,
       error,
       fetchChats,

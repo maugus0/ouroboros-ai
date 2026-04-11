@@ -80,7 +80,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <img src="/orb.jpg" alt="" className="h-8 w-8 rounded-full object-cover" />
-          <span className="text-lg font-semibold tracking-tight">OuroborosAI</span>
+          <span className="text-lg font-semibold tracking-tight">Ouroboros</span>
         </div>
       </SidebarHeader>
 

@@ -1,17 +1,30 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   FolderPlus,
   ChevronRight,
   Folder,
   MoreHorizontal,
-  Pencil,
+  Settings,
   Trash2,
   MessageSquare,
   MessageSquarePlus,
+  GraduationCap,
+  Briefcase,
+  BookOpen,
+  FileText,
+  Globe,
+  Heart,
+  Lightbulb,
+  Star,
+  Target,
+  Users,
+  Zap,
+  type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useProjects } from "@/contexts/ProjectContext";
 import { useChat } from "@/contexts/ChatContext";
+import { getErrorMessage } from "@/api/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
@@ -34,8 +47,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CreateProjectDialog } from "@/components/dialogs/CreateProjectDialog";
-import { RenameProjectDialog } from "@/components/dialogs/RenameProjectDialog";
+import { EditProjectDialog } from "@/components/dialogs/EditProjectDialog";
 import type { Project } from "@/types/chat.types";
+
+const PROJECT_ICONS: Record<string, LucideIcon> = {
+  folder: Folder,
+  "graduation-cap": GraduationCap,
+  briefcase: Briefcase,
+  "book-open": BookOpen,
+  "file-text": FileText,
+  globe: Globe,
+  heart: Heart,
+  lightbulb: Lightbulb,
+  star: Star,
+  target: Target,
+  users: Users,
+  zap: Zap,
+};
+
+function getProjectIcon(iconId: string | null): LucideIcon {
+  if (iconId && PROJECT_ICONS[iconId]) {
+    return PROJECT_ICONS[iconId];
+  }
+  return Folder;
+}
 
 interface ProjectListProps {
   onChatClick: (chatId: string) => void;
@@ -43,16 +78,29 @@ interface ProjectListProps {
 }
 
 export function ProjectList({ onChatClick, activeChatId }: ProjectListProps) {
-  const navigate = useNavigate();
   const { projects, deleteProject } = useProjects();
-  const { chats, createChat } = useChat();
+  const { chats, createChat, unassignChatsFromProject } = useChat();
   const [createOpen, setCreateOpen] = useState(false);
-  const [renameProject, setRenameProject] = useState<Project | null>(null);
+  const [editProject, setEditProject] = useState<Project | null>(null);
 
   const getProjectChats = (projectId: string) => chats.filter((c) => c.project_id === projectId);
 
   const handleNewChatInProject = async (projectId: string) => {
-    await createChat(undefined, projectId);
+    try {
+      await createChat(undefined, projectId);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    try {
+      await deleteProject(id);
+      unassignChatsFromProject(id);
+      toast.success("Project deleted");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
   };
 
   return (
@@ -77,12 +125,13 @@ export function ProjectList({ onChatClick, activeChatId }: ProjectListProps) {
             ) : (
               projects.map((project) => {
                 const projectChats = getProjectChats(project.id);
+                const ProjectIcon = getProjectIcon(project.icon);
                 return (
                   <Collapsible key={project.id} asChild defaultOpen={false}>
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton tooltip={project.name}>
-                          <Folder
+                          <ProjectIcon
                             className="h-4 w-4"
                             style={{ color: project.color ?? undefined }}
                           />
@@ -101,14 +150,14 @@ export function ProjectList({ onChatClick, activeChatId }: ProjectListProps) {
                             <MessageSquarePlus className="mr-2 h-4 w-4" />
                             New Chat
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setRenameProject(project)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Rename
+                          <DropdownMenuItem onClick={() => setEditProject(project)}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            Edit Project
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
-                            onClick={() => deleteProject(project.id)}
+                            onClick={() => handleDeleteProject(project.id)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
@@ -152,10 +201,10 @@ export function ProjectList({ onChatClick, activeChatId }: ProjectListProps) {
       </SidebarGroup>
 
       <CreateProjectDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <RenameProjectDialog
-        project={renameProject}
-        open={renameProject !== null}
-        onOpenChange={(open) => !open && setRenameProject(null)}
+      <EditProjectDialog
+        project={editProject}
+        open={editProject !== null}
+        onOpenChange={(open) => !open && setEditProject(null)}
       />
     </>
   );

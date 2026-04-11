@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useProjects } from "@/contexts/ProjectContext";
+import { getErrorMessage } from "@/api/client";
+import { PROJECT_NAME_MAX_LENGTH } from "@/types/chat.types";
 import type { Project } from "@/types/chat.types";
 import {
   Dialog,
@@ -30,14 +33,20 @@ export function RenameProjectDialog({ project, open, onOpenChange }: RenameProje
     }
   }, [project]);
 
+  const trimmedName = name.trim();
+  const isNameValid = trimmedName.length > 0 && trimmedName.length <= PROJECT_NAME_MAX_LENGTH;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!project || !name.trim()) return;
+    if (!project || !isNameValid) return;
 
     setIsSubmitting(true);
     try {
       await updateProject(project.id, { name: name.trim() });
+      toast.success("Project renamed");
       onOpenChange(false);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -52,11 +61,25 @@ export function RenameProjectDialog({ project, open, onOpenChange }: RenameProje
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="rename-project-name">Name</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="rename-project-name">Name</Label>
+              {trimmedName.length > PROJECT_NAME_MAX_LENGTH * 0.8 && (
+                <span
+                  className={`text-xs tabular-nums ${
+                    trimmedName.length > PROJECT_NAME_MAX_LENGTH
+                      ? "text-destructive"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {trimmedName.length}/{PROJECT_NAME_MAX_LENGTH}
+                </span>
+              )}
+            </div>
             <Input
               id="rename-project-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              maxLength={PROJECT_NAME_MAX_LENGTH + 10}
               autoFocus
               required
             />
@@ -65,7 +88,7 @@ export function RenameProjectDialog({ project, open, onOpenChange }: RenameProje
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!name.trim() || isSubmitting}>
+            <Button type="submit" disabled={!isNameValid || isSubmitting}>
               {isSubmitting ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>

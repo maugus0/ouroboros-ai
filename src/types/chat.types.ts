@@ -2,6 +2,13 @@
  * Chat & Project types matching Ouroboros Orchestrator backend API responses.
  */
 
+// ─── Validation Constants ───────────────────────────────────────
+
+export const MESSAGE_MAX_LENGTH = 10000;
+export const CHAT_TITLE_MAX_LENGTH = 200;
+export const PROJECT_NAME_MAX_LENGTH = 100;
+export const PROJECT_DESCRIPTION_MAX_LENGTH = 500;
+
 // ─── Chat Types ─────────────────────────────────────────────────
 
 export interface Chat {
@@ -72,12 +79,14 @@ export interface UpdateProjectRequest {
 
 export interface PaginatedChatsResponse {
   chats: Chat[];
+  /** Opaque cursor for next page (base64-encoded timestamp). Pass to `cursor` param for next page. */
   next_cursor: string | null;
   total_count: number;
 }
 
 export interface PaginatedMessagesResponse {
   messages: Message[];
+  /** Opaque cursor for next page (JSON-encoded `{t: ISO timestamp, id: message UUID}`). Pass to `cursor` param for next page. */
   next_cursor: string | null;
 }
 

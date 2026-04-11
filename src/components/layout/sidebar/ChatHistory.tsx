@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { MessageSquare, MoreHorizontal, Trash2, Pencil, Star, FolderInput } from "lucide-react";
+import { toast } from "sonner";
 import { useChat } from "@/contexts/ChatContext";
 import { useProjects } from "@/contexts/ProjectContext";
+import { getErrorMessage } from "@/api/client";
 import type { Chat } from "@/types/chat.types";
 import {
   SidebarGroup,
@@ -59,7 +61,34 @@ function groupChatsByDate(chats: Chat[]): { label: string; chats: Chat[] }[] {
 export function ChatHistory({ onChatClick, activeChatId }: ChatHistoryProps) {
   const { chats, deleteChat, toggleStar, moveToProject } = useChat();
   const { projects } = useProjects();
-  const [renameChat, setRenameChat] = useState<Chat | null>(null);
+  const [renameChatTarget, setRenameChatTarget] = useState<Chat | null>(null);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteChat(id);
+      toast.success("Chat deleted");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleToggleStar = async (id: string) => {
+    try {
+      await toggleStar(id);
+      toast.success("Chat starred");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleMoveToProject = async (chatId: string, projectId: string) => {
+    try {
+      await moveToProject(chatId, projectId);
+      toast.success("Chat moved to project");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
 
   const unassignedChats = useMemo(
     () => chats.filter((c) => !c.is_starred && !c.project_id),
@@ -94,7 +123,7 @@ export function ChatHistory({ onChatClick, activeChatId }: ChatHistoryProps) {
                       </SidebarMenuAction>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="right" align="start">
-                      <DropdownMenuItem onClick={() => toggleStar(chat.id)}>
+                      <DropdownMenuItem onClick={() => handleToggleStar(chat.id)}>
                         <Star className="mr-2 h-4 w-4" />
                         Star
                       </DropdownMenuItem>
@@ -108,7 +137,7 @@ export function ChatHistory({ onChatClick, activeChatId }: ChatHistoryProps) {
                             {projects.map((project) => (
                               <DropdownMenuItem
                                 key={project.id}
-                                onClick={() => moveToProject(chat.id, project.id)}
+                                onClick={() => handleMoveToProject(chat.id, project.id)}
                               >
                                 <span
                                   className="mr-2 h-2 w-2 rounded-full"
@@ -120,14 +149,14 @@ export function ChatHistory({ onChatClick, activeChatId }: ChatHistoryProps) {
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                       )}
-                      <DropdownMenuItem onClick={() => setRenameChat(chat)}>
+                      <DropdownMenuItem onClick={() => setRenameChatTarget(chat)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Rename
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive"
-                        onClick={() => deleteChat(chat.id)}
+                        onClick={() => handleDelete(chat.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
@@ -142,9 +171,9 @@ export function ChatHistory({ onChatClick, activeChatId }: ChatHistoryProps) {
       ))}
 
       <RenameChatDialog
-        chat={renameChat}
-        open={renameChat !== null}
-        onOpenChange={(open) => !open && setRenameChat(null)}
+        chat={renameChatTarget}
+        open={renameChatTarget !== null}
+        onOpenChange={(open) => !open && setRenameChatTarget(null)}
       />
     </>
   );

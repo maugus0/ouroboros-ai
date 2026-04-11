@@ -17,9 +17,13 @@ export function MessageBubble({ message, userName }: MessageBubbleProps) {
 
   const agentName = message.metadata?.agent_name as string | undefined;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
-    toast.success("Copied to clipboard");
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Failed to copy to clipboard");
+    }
   };
 
   if (isUser) {

@@ -45,23 +45,41 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createProject = useCallback(async (data: CreateProjectRequest): Promise<Project> => {
-    const project = await projectsApi.create(data);
-    setProjects((prev) => [project, ...prev]);
-    return project;
+    setError(null);
+    try {
+      const project = await projectsApi.create(data);
+      setProjects((prev) => [project, ...prev]);
+      return project;
+    } catch (err) {
+      setError(getErrorMessage(err));
+      throw err;
+    }
   }, []);
 
   const updateProject = useCallback(
     async (id: string, data: UpdateProjectRequest): Promise<Project> => {
-      const updated = await projectsApi.update(id, data);
-      setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)));
-      return updated;
+      setError(null);
+      try {
+        const updated = await projectsApi.update(id, data);
+        setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)));
+        return updated;
+      } catch (err) {
+        setError(getErrorMessage(err));
+        throw err;
+      }
     },
     []
   );
 
   const deleteProject = useCallback(async (id: string): Promise<void> => {
-    await projectsApi.delete(id);
-    setProjects((prev) => prev.filter((p) => p.id !== id));
+    setError(null);
+    try {
+      await projectsApi.delete(id);
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      setError(getErrorMessage(err));
+      throw err;
+    }
   }, []);
 
   const getProjectById = useCallback(

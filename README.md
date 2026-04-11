@@ -145,6 +145,30 @@ The UI expects the **Ouroboros Orchestrator** OpenAPI surface under `{VITE_API_B
 
 Auth uses the same host for `/auth/*` and refresh as configured in `client.ts`.
 
+## Error handling
+
+The app uses a consistent error-handling pattern:
+
+- **Context methods** (`ChatContext`, `ProjectContext`) wrap API calls in `try/catch`, update the context `error` state via `setError(getErrorMessage(err))`, and rethrow so callers can respond.
+- **UI components** (sidebar actions, dialogs) catch errors from context methods and show **toast notifications** (via Sonner) with user-friendly messages.
+- **Async clipboard** (`navigator.clipboard.writeText`) is awaited and wrapped in try/catch with success/error toasts.
+- **Dialog forms** (create project, rename chat/project) show error toasts on failure and only close on success.
+
+This ensures users receive immediate feedback on both success and failure without silent errors or unhandled promise rejections.
+
+## Input validation
+
+Client-side validation mirrors backend constraints (defined in `src/types/chat.types.ts`):
+
+| Field                   | Max Length | Notes                                           |
+|-------------------------|------------|-------------------------------------------------|
+| Message content         | 10,000     | Character count shown when approaching limit    |
+| Chat title              | 200        | Rename dialog enforces limit                    |
+| Project name            | 100        | Create/rename dialogs enforce limit             |
+| Project description     | 500        | Create dialog enforces limit                    |
+
+All inputs are trimmed before submission. The send button and submit buttons are disabled when validation fails.
+
 ## Scripts
 
 | Script               | Description                          |

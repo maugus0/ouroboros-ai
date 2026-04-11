@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useChat } from "@/contexts/ChatContext";
+import { getErrorMessage } from "@/api/client";
+import { CHAT_TITLE_MAX_LENGTH } from "@/types/chat.types";
 import type { Chat } from "@/types/chat.types";
 import {
   Dialog,
@@ -30,14 +33,20 @@ export function RenameChatDialog({ chat, open, onOpenChange }: RenameChatDialogP
     }
   }, [chat]);
 
+  const trimmedTitle = title.trim();
+  const isTitleValid = trimmedTitle.length > 0 && trimmedTitle.length <= CHAT_TITLE_MAX_LENGTH;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chat || !title.trim()) return;
+    if (!chat || !isTitleValid) return;
 
     setIsSubmitting(true);
     try {
       await renameChat(chat.id, title.trim());
+      toast.success("Chat renamed");
       onOpenChange(false);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -52,11 +61,25 @@ export function RenameChatDialog({ chat, open, onOpenChange }: RenameChatDialogP
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="rename-chat-title">Title</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="rename-chat-title">Title</Label>
+              {trimmedTitle.length > CHAT_TITLE_MAX_LENGTH * 0.8 && (
+                <span
+                  className={`text-xs tabular-nums ${
+                    trimmedTitle.length > CHAT_TITLE_MAX_LENGTH
+                      ? "text-destructive"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {trimmedTitle.length}/{CHAT_TITLE_MAX_LENGTH}
+                </span>
+              )}
+            </div>
             <Input
               id="rename-chat-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              maxLength={CHAT_TITLE_MAX_LENGTH + 10}
               autoFocus
               required
             />
@@ -65,7 +88,7 @@ export function RenameChatDialog({ chat, open, onOpenChange }: RenameChatDialogP
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!title.trim() || isSubmitting}>
+            <Button type="submit" disabled={!isTitleValid || isSubmitting}>
               {isSubmitting ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>

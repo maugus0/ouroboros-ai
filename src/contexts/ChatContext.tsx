@@ -31,6 +31,7 @@ interface ChatContextValue {
   toggleStar: (id: string) => Promise<void>;
   moveToProject: (chatId: string, projectId: string | null) => Promise<void>;
   loadMessages: (chatId: string) => Promise<void>;
+  unassignChatsFromProject: (projectId: string) => void;
   clearError: () => void;
 }
 
@@ -72,11 +73,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // ─── Load Messages ────────────────────────────────────────────
 
   const loadMessages = useCallback(async (chatId: string) => {
+    setError(null);
     try {
       const response = await chatsApi.getMessages(chatId, { limit: 100, order: "asc" });
       setMessages(response.messages);
     } catch (err) {
       console.error("Failed to load messages:", err);
+      setError(getErrorMessage(err));
       setMessages([]);
     }
   }, []);
@@ -99,22 +102,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const createChat = useCallback(
     async (message?: string, projectId?: string): Promise<Chat> => {
-      const chat = await chatsApi.create({
-        message,
-        project_id: projectId,
-      });
+      setError(null);
+      try {
+        const chat = await chatsApi.create({
+          message,
+          project_id: projectId,
+        });
 
-      setChats((prev) => [chat, ...prev]);
-      setActiveChatIdState(chat.id);
+        setChats((prev) => [chat, ...prev]);
+        setActiveChatIdState(chat.id);
 
-      if (message) {
-        await loadMessages(chat.id);
-      } else {
-        setMessages([]);
+        if (message) {
+          await loadMessages(chat.id);
+        } else {
+          setMessages([]);
+        }
+
+        navigate(`/dashboard/chat/${chat.id}`);
+        return chat;
+      } catch (err) {
+        setError(getErrorMessage(err));
+        throw err;
       }
-
-      navigate(`/dashboard/chat/${chat.id}`);
-      return chat;
     },
     [navigate, loadMessages]
   );
@@ -123,13 +132,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const deleteChat = useCallback(
     async (id: string) => {
-      await chatsApi.delete(id);
-      setChats((prev) => prev.filter((c) => c.id !== id));
+      setError(null);
+      try {
+        await chatsApi.delete(id);
+        setChats((prev) => prev.filter((c) => c.id !== id));
 
-      if (activeChatId === id) {
-        setActiveChatIdState(null);
-        setMessages([]);
-        navigate("/dashboard");
+        if (activeChatId === id) {
+          setActiveChatIdState(null);
+          setMessages([]);
+          navigate("/dashboard");
+        }
+      } catch (err) {
+        setError(getErrorMessage(err));
+        throw err;
       }
     },
     [activeChatId, navigate]
@@ -138,8 +153,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // ─── Rename Chat ──────────────────────────────────────────────
 
   const renameChat = useCallback(async (id: string, title: string) => {
-    const updated = await chatsApi.update(id, { title });
-    setChats((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    setError(null);
+    try {
+      const updated = await chatsApi.update(id, { title });
+      setChats((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    } catch (err) {
+      setError(getErrorMessage(err));
+      throw err;
+    }
   }, []);
 
   // ─── Toggle Star ──────────────────────────────────────────────
@@ -149,8 +170,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const chat = chats.find((c) => c.id === id);
       if (!chat) return;
 
-      const updated = await chatsApi.toggleStar(id, !chat.is_starred);
-      setChats((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      setError(null);
+      try {
+        const updated = await chatsApi.toggleStar(id, !chat.is_starred);
+        setChats((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      } catch (err) {
+        setError(getErrorMessage(err));
+        throw err;
+      }
     },
     [chats]
   );
@@ -158,8 +185,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // ─── Move to Project ──────────────────────────────────────────
 
   const moveToProject = useCallback(async (chatId: string, projectId: string | null) => {
-    const updated = await chatsApi.moveToProject(chatId, projectId);
-    setChats((prev) => prev.map((c) => (c.id === chatId ? updated : c)));
+    setError(null);
+    try {
+      const updated = await chatsApi.moveToProject(chatId, projectId);
+      setChats((prev) => prev.map((c) => (c.id === chatId ? updated : c)));
+    } catch (err) {
+      setError(getErrorMessage(err));
+      throw err;
+    }
   }, []);
 
   // ─── Send Message ─────────────────────────────────────────────
@@ -207,6 +240,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [activeChatId, createChat]
   );
 
+  // ─── Unassign Chats from Project ─────────────────────────────
+  // Called when a project is deleted to update local state immediately
+
+  const unassignChatsFromProject = useCallback((projectId: string) => {
+    setChats((prev) =>
+      prev.map((c) => (c.project_id === projectId ? { ...c, project_id: null } : c))
+    );
+  }, []);
+
   // ─── Clear Error ──────────────────────────────────────────────
 
   const clearError = useCallback(() => setError(null), []);
@@ -238,6 +280,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       toggleStar,
       moveToProject,
       loadMessages,
+      unassignChatsFromProject,
       clearError,
     }),
     [
@@ -258,6 +301,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       toggleStar,
       moveToProject,
       loadMessages,
+      unassignChatsFromProject,
       clearError,
     ]
   );

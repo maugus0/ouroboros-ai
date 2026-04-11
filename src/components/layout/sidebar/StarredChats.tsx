@@ -1,6 +1,8 @@
 import { Star, MessageSquare, MoreHorizontal, Trash2, StarOff, FolderInput } from "lucide-react";
+import { toast } from "sonner";
 import { useChat } from "@/contexts/ChatContext";
 import { useProjects } from "@/contexts/ProjectContext";
+import { getErrorMessage } from "@/api/client";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -30,6 +32,33 @@ export function StarredChats({ onChatClick, activeChatId }: StarredChatsProps) {
   const { starredChats, toggleStar, deleteChat, moveToProject } = useChat();
   const { projects } = useProjects();
 
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteChat(id);
+      toast.success("Chat deleted");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleUnstar = async (id: string) => {
+    try {
+      await toggleStar(id);
+      toast.success("Chat unstarred");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleMoveToProject = async (chatId: string, projectId: string | null) => {
+    try {
+      await moveToProject(chatId, projectId);
+      toast.success(projectId ? "Chat moved to project" : "Chat removed from project");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
   if (starredChats.length === 0) return null;
 
   return (
@@ -57,7 +86,7 @@ export function StarredChats({ onChatClick, activeChatId }: StarredChatsProps) {
                   </SidebarMenuAction>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="right" align="start">
-                  <DropdownMenuItem onClick={() => toggleStar(chat.id)}>
+                  <DropdownMenuItem onClick={() => handleUnstar(chat.id)}>
                     <StarOff className="mr-2 h-4 w-4" />
                     Unstar
                   </DropdownMenuItem>
@@ -70,7 +99,7 @@ export function StarredChats({ onChatClick, activeChatId }: StarredChatsProps) {
                       <DropdownMenuSubContent>
                         {chat.project_id && (
                           <>
-                            <DropdownMenuItem onClick={() => moveToProject(chat.id, null)}>
+                            <DropdownMenuItem onClick={() => handleMoveToProject(chat.id, null)}>
                               Remove from Project
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -81,7 +110,7 @@ export function StarredChats({ onChatClick, activeChatId }: StarredChatsProps) {
                           .map((project) => (
                             <DropdownMenuItem
                               key={project.id}
-                              onClick={() => moveToProject(chat.id, project.id)}
+                              onClick={() => handleMoveToProject(chat.id, project.id)}
                             >
                               <span
                                 className="mr-2 h-2 w-2 rounded-full"
@@ -96,7 +125,7 @@ export function StarredChats({ onChatClick, activeChatId }: StarredChatsProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive"
-                    onClick={() => deleteChat(chat.id)}
+                    onClick={() => handleDelete(chat.id)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete

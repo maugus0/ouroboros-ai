@@ -61,7 +61,7 @@ export function ChatInput({ onSend, isStreaming }: ChatInputProps) {
           </Button>
         </div>
         <p className="mt-1.5 text-center text-[10px] text-muted-foreground sm:mt-2 sm:text-xs">
-          OuroborosAI may make mistakes. Verify important scholarship details.
+          Ouroboros is AI and can make mistakes. Please double-check responses.
         </p>
       </div>
     </div>

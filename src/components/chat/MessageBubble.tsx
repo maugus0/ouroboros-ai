@@ -4,6 +4,7 @@ import { Copy, RefreshCw } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { getInitials } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Message } from "@/types/chat.types";
 
 interface MessageBubbleProps {
@@ -14,8 +15,11 @@ interface MessageBubbleProps {
 export function MessageBubble({ message, userName }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
+  const agentName = message.metadata?.agent_name as string | undefined;
+
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
+    toast.success("Copied to clipboard");
   };
 
   if (isUser) {
@@ -40,9 +44,7 @@ export function MessageBubble({ message, userName }: MessageBubbleProps) {
         <img src="/orb.jpg" alt="" className="h-5 w-5 rounded-full object-cover sm:h-6 sm:w-6" />
       </div>
       <div className="min-w-0 flex-1">
-        {message.agentName && (
-          <p className="mb-1 text-xs font-medium text-muted-foreground">{message.agentName}</p>
-        )}
+        {agentName && <p className="mb-1 text-xs font-medium text-muted-foreground">{agentName}</p>}
         <div className="prose prose-sm max-w-none dark:prose-invert">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
         </div>

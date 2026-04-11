@@ -1,170 +1,264 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import type { Chat, Message } from "@/types/chat.types";
-import { mockChats } from "@/lib/mock-data";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import { chatsApi } from "@/api/chatsApi";
+import { getErrorMessage } from "@/api/client";
+import type { Chat, ChatFilters, Message } from "@/types/chat.types";
 
 interface ChatContextValue {
   chats: Chat[];
+  starredChats: Chat[];
   activeChat: Chat | null;
   activeChatId: string | null;
+  messages: Message[];
+  isLoading: boolean;
   isStreaming: boolean;
+  error: string | null;
 
-  createChat: () => Chat;
-  deleteChat: (id: string) => void;
-  renameChat: (id: string, title: string) => void;
+  fetchChats: (filters?: ChatFilters) => Promise<void>;
+  createChat: (message?: string, projectId?: string) => Promise<Chat>;
+  deleteChat: (id: string) => Promise<void>;
+  renameChat: (id: string, title: string) => Promise<void>;
   setActiveChatId: (id: string | null) => void;
-  sendMessage: (content: string) => void;
+  sendMessage: (content: string) => Promise<void>;
+  toggleStar: (id: string) => Promise<void>;
+  moveToProject: (chatId: string, projectId: string | null) => Promise<void>;
+  loadMessages: (chatId: string) => Promise<void>;
+  clearError: () => void;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
 
-function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
+export function ChatProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
 
-function generateMockReply(userContent: string): string {
-  const lower = userContent.toLowerCase();
-  if (lower.includes("scholarship") || lower.includes("funding")) {
-    return "I'll search our database for scholarships matching your profile. Based on your academic background and target programs, I'm finding several promising opportunities. Let me compile the results for you.";
-  }
-  if (lower.includes("cv") || lower.includes("resume")) {
-    return "I'd be happy to help with your CV. Please share it and I'll analyze the structure, highlight strengths, and suggest improvements tailored to your target programs.";
-  }
-  if (lower.includes("sop") || lower.includes("statement")) {
-    return "Great choice! A strong Statement of Purpose can make all the difference. Let me help you structure it effectively based on your profile and the program's expectations.";
-  }
-  return "I understand your request. Let me coordinate with our specialized agents to provide you with the most comprehensive assistance. Is there anything specific you'd like me to focus on?";
-}
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [activeChatId, setActiveChatIdState] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
 
-export function ChatProvider({ children }: { children: React.ReactNode }) {
-  const [chats, setChats] = useState<Chat[]>(mockChats);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const activeChat = useMemo(
     () => chats.find((c) => c.id === activeChatId) ?? null,
     [chats, activeChatId]
   );
 
-  const createChat = useCallback(() => {
-    const newChat: Chat = {
-      id: generateId(),
-      title: "New conversation",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      messages: [],
-    };
-    setChats((prev) => [newChat, ...prev]);
-    setActiveChatId(newChat.id);
-    return newChat;
+  const starredChats = useMemo(() => chats.filter((c) => c.is_starred), [chats]);
+
+  // ─── Fetch Chats ──────────────────────────────────────────────
+
+  const fetchChats = useCallback(async (filters: ChatFilters = {}) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await chatsApi.list({ limit: 50, ...filters });
+      setChats(response.chats);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const deleteChat = useCallback(
-    (id: string) => {
-      setChats((prev) => prev.filter((c) => c.id !== id));
-      if (activeChatId === id) setActiveChatId(null);
+  // ─── Load Messages ────────────────────────────────────────────
+
+  const loadMessages = useCallback(async (chatId: string) => {
+    try {
+      const response = await chatsApi.getMessages(chatId, { limit: 100, order: "asc" });
+      setMessages(response.messages);
+    } catch (err) {
+      console.error("Failed to load messages:", err);
+      setMessages([]);
+    }
+  }, []);
+
+  // ─── Set Active Chat ──────────────────────────────────────────
+
+  const setActiveChatId = useCallback(
+    (id: string | null) => {
+      setActiveChatIdState(id);
+      if (id) {
+        loadMessages(id);
+      } else {
+        setMessages([]);
+      }
     },
-    [activeChatId]
+    [loadMessages]
   );
 
-  const renameChat = useCallback((id: string, title: string) => {
-    setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
+  // ─── Create Chat ──────────────────────────────────────────────
+
+  const createChat = useCallback(
+    async (message?: string, projectId?: string): Promise<Chat> => {
+      const chat = await chatsApi.create({
+        message,
+        project_id: projectId,
+      });
+
+      setChats((prev) => [chat, ...prev]);
+      setActiveChatIdState(chat.id);
+
+      if (message) {
+        await loadMessages(chat.id);
+      } else {
+        setMessages([]);
+      }
+
+      navigate(`/dashboard/chat/${chat.id}`);
+      return chat;
+    },
+    [navigate, loadMessages]
+  );
+
+  // ─── Delete Chat ──────────────────────────────────────────────
+
+  const deleteChat = useCallback(
+    async (id: string) => {
+      await chatsApi.delete(id);
+      setChats((prev) => prev.filter((c) => c.id !== id));
+
+      if (activeChatId === id) {
+        setActiveChatIdState(null);
+        setMessages([]);
+        navigate("/dashboard");
+      }
+    },
+    [activeChatId, navigate]
+  );
+
+  // ─── Rename Chat ──────────────────────────────────────────────
+
+  const renameChat = useCallback(async (id: string, title: string) => {
+    const updated = await chatsApi.update(id, { title });
+    setChats((prev) => prev.map((c) => (c.id === id ? updated : c)));
   }, []);
 
+  // ─── Toggle Star ──────────────────────────────────────────────
+
+  const toggleStar = useCallback(
+    async (id: string) => {
+      const chat = chats.find((c) => c.id === id);
+      if (!chat) return;
+
+      const updated = await chatsApi.toggleStar(id, !chat.is_starred);
+      setChats((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    },
+    [chats]
+  );
+
+  // ─── Move to Project ──────────────────────────────────────────
+
+  const moveToProject = useCallback(async (chatId: string, projectId: string | null) => {
+    const updated = await chatsApi.moveToProject(chatId, projectId);
+    setChats((prev) => prev.map((c) => (c.id === chatId ? updated : c)));
+  }, []);
+
+  // ─── Send Message ─────────────────────────────────────────────
+
   const sendMessage = useCallback(
-    (content: string) => {
+    async (content: string) => {
       if (!content.trim()) return;
 
       let chatId = activeChatId;
 
-      const userMsg: Message = {
-        id: generateId(),
-        chatId: chatId ?? "",
-        role: "user",
-        content,
-        createdAt: new Date(),
-      };
-
       if (!chatId) {
-        const newChat: Chat = {
-          id: generateId(),
-          title: content.slice(0, 50) + (content.length > 50 ? "..." : ""),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          messages: [{ ...userMsg, chatId: "" }],
-        };
-        newChat.messages[0].chatId = newChat.id;
-        chatId = newChat.id;
-        setChats((prev) => [newChat, ...prev]);
-        setActiveChatId(newChat.id);
-      } else {
-        setChats((prev) =>
-          prev.map((c) => {
-            if (c.id !== chatId) return c;
-            const title =
-              c.messages.length === 0
-                ? content.slice(0, 50) + (content.length > 50 ? "..." : "")
-                : c.title;
-            return {
-              ...c,
-              title,
-              updatedAt: new Date(),
-              messages: [...c.messages, { ...userMsg, chatId: c.id }],
-            };
-          })
-        );
+        const chat = await createChat();
+        chatId = chat.id;
       }
 
-      setIsStreaming(true);
-      const finalChatId = chatId;
+      const tempUserMsg: Message = {
+        id: `temp-${Date.now()}`,
+        chat_id: chatId,
+        role: "user",
+        content,
+        metadata: null,
+        created_at: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, tempUserMsg]);
 
-      setTimeout(() => {
-        const assistantMsg: Message = {
-          id: generateId(),
-          chatId: finalChatId,
-          role: "assistant",
-          content: generateMockReply(content),
-          agentName: "Orchestrator Agent",
-          createdAt: new Date(),
-        };
-        setChats((prev) =>
-          prev.map((c) =>
-            c.id === finalChatId
-              ? {
-                  ...c,
-                  updatedAt: new Date(),
-                  messages: [...c.messages, assistantMsg],
-                }
-              : c
-          )
-        );
+      setIsStreaming(true);
+
+      try {
+        const response = await chatsApi.sendMessage(chatId, { content });
+
+        setMessages((prev) => [
+          ...prev.filter((m) => m.id !== tempUserMsg.id),
+          response.user_message,
+          response.assistant_message,
+        ]);
+
+        setChats((prev) => prev.map((c) => (c.id === chatId ? response.chat : c)));
+      } catch (err) {
+        setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id));
+        setError(getErrorMessage(err));
+      } finally {
         setIsStreaming(false);
-      }, 1200);
+      }
     },
-    [activeChatId]
+    [activeChatId, createChat]
   );
+
+  // ─── Clear Error ──────────────────────────────────────────────
+
+  const clearError = useCallback(() => setError(null), []);
+
+  // ─── Initial Fetch ────────────────────────────────────────────
+
+  useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
+
+  // ─── Context Value ────────────────────────────────────────────
 
   const value = useMemo(
     () => ({
       chats,
+      starredChats,
       activeChat,
       activeChatId,
+      messages,
+      isLoading,
       isStreaming,
+      error,
+      fetchChats,
       createChat,
       deleteChat,
       renameChat,
       setActiveChatId,
       sendMessage,
+      toggleStar,
+      moveToProject,
+      loadMessages,
+      clearError,
     }),
     [
       chats,
+      starredChats,
       activeChat,
       activeChatId,
+      messages,
+      isLoading,
       isStreaming,
+      error,
+      fetchChats,
       createChat,
       deleteChat,
       renameChat,
       setActiveChatId,
       sendMessage,
+      toggleStar,
+      moveToProject,
+      loadMessages,
+      clearError,
     ]
   );
 

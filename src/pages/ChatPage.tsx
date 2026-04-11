@@ -9,7 +9,7 @@ import { ChatInput } from "@/components/chat/ChatInput";
 export default function ChatPage() {
   const { chatId } = useParams<{ chatId?: string }>();
   const { user } = useAuth();
-  const { activeChat, activeChatId, setActiveChatId, sendMessage, isStreaming } = useChat();
+  const { activeChatId, messages, setActiveChatId, sendMessage, isStreaming } = useChat();
 
   useEffect(() => {
     if (chatId && chatId !== activeChatId) {
@@ -19,7 +19,6 @@ export default function ChatPage() {
     }
   }, [chatId, activeChatId, setActiveChatId]);
 
-  const messages = activeChat?.messages ?? [];
   const isEmpty = messages.length === 0;
 
   return (
@@ -31,7 +30,7 @@ export default function ChatPage() {
         </>
       ) : (
         <>
-          <ChatMessages messages={messages} isStreaming={isStreaming} userName={user?.name} />
+          <ChatMessages messages={messages} isStreaming={isStreaming} userName={user?.first_name} />
           <ChatInput onSend={sendMessage} isStreaming={isStreaming} />
         </>
       )}

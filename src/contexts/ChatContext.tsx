@@ -29,6 +29,7 @@ interface ChatContextValue {
   renameChat: (id: string, title: string) => Promise<void>;
   setActiveChatId: (id: string | null) => void;
   sendMessage: (content: string) => Promise<void>;
+  postAssistantNotice: (content: string, metadata?: Record<string, unknown>) => Promise<void>;
   toggleStar: (id: string) => Promise<void>;
   moveToProject: (chatId: string, projectId: string | null) => Promise<void>;
   loadMessages: (chatId: string) => Promise<void>;
@@ -246,6 +247,27 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [activeChatId, createChat]
   );
 
+  const postAssistantNotice = useCallback(
+    async (content: string, metadata?: Record<string, unknown>) => {
+      if (!content.trim()) return;
+
+      let chatId = activeChatId;
+      if (!chatId) {
+        const chat = await createChat();
+        chatId = chat.id;
+      }
+
+      try {
+        const response = await chatsApi.postAssistantNotice(chatId, { content, metadata });
+        setMessages((prev) => [...prev, response.assistant_message]);
+        setChats((prev) => prev.map((c) => (c.id === chatId ? response.chat : c)));
+      } catch (err) {
+        setError(getErrorMessage(err));
+      }
+    },
+    [activeChatId, createChat]
+  );
+
   // ─── Unassign Chats from Project ─────────────────────────────
   // Called when a project is deleted to update local state immediately
 
@@ -284,6 +306,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       renameChat,
       setActiveChatId,
       sendMessage,
+      postAssistantNotice,
       toggleStar,
       moveToProject,
       loadMessages,
@@ -306,6 +329,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       renameChat,
       setActiveChatId,
       sendMessage,
+      postAssistantNotice,
       toggleStar,
       moveToProject,
       loadMessages,

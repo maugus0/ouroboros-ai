@@ -2,6 +2,7 @@ import { Upload, Search, UserCheck, FileText } from "lucide-react";
 
 interface ChatEmptyStateProps {
   onSuggestionClick: (text: string) => void;
+  onUploadClick: () => void;
 }
 
 const suggestions = [
@@ -9,7 +10,7 @@ const suggestions = [
     icon: Upload,
     title: "Upload my CV",
     description: "for analysis and feedback",
-    prompt: "I'd like to upload my CV for processing, analysis and feedback on ORB.",
+    action: "upload" as const,
   },
   {
     icon: Search,
@@ -32,7 +33,7 @@ const suggestions = [
   },
 ];
 
-export function ChatEmptyState({ onSuggestionClick }: ChatEmptyStateProps) {
+export function ChatEmptyState({ onSuggestionClick, onUploadClick }: ChatEmptyStateProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-6">
       <div className="flex flex-col items-center gap-3 pb-6 sm:gap-4 sm:pb-8">
@@ -55,7 +56,7 @@ export function ChatEmptyState({ onSuggestionClick }: ChatEmptyStateProps) {
         {suggestions.map((s) => (
           <button
             key={s.title}
-            onClick={() => onSuggestionClick(s.prompt)}
+            onClick={() => (s.action === "upload" ? onUploadClick() : onSuggestionClick(s.prompt))}
             className="flex items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-accent sm:p-4"
           >
             <s.icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />

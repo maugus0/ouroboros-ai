@@ -61,6 +61,11 @@ export interface SendMessageRequest {
   content: string;
 }
 
+export interface AssistantNoticeRequest {
+  content: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface CreateProjectRequest {
   name: string;
   description?: string;
@@ -98,6 +103,11 @@ export interface PaginatedProjectsResponse {
 
 export interface SendMessageResponse {
   user_message: Message;
+  assistant_message: Message;
+  chat: Chat;
+}
+
+export interface AssistantNoticeResponse {
   assistant_message: Message;
   chat: Chat;
 }

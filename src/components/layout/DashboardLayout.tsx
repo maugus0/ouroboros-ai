@@ -11,9 +11,9 @@ export default function DashboardLayout() {
       <ChatProvider>
         <SidebarProvider>
           <AppSidebar />
-          <SidebarInset>
+          <SidebarInset className="h-svh overflow-hidden">
             <DashboardHeader />
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <Outlet />
             </div>
           </SidebarInset>

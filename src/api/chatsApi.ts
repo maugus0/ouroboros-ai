@@ -5,6 +5,8 @@
 
 import apiClient from "./client";
 import type {
+  AssistantNoticeRequest,
+  AssistantNoticeResponse,
   Chat,
   ChatFilters,
   CreateChatRequest,
@@ -73,6 +75,20 @@ export const chatsApi = {
   async sendMessage(chatId: string, data: SendMessageRequest): Promise<SendMessageResponse> {
     const response = await apiClient.post<SendMessageResponse>(
       `/api/v1/chats/${chatId}/messages`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Post an assistant-authored notice (no synthetic user message).
+   */
+  async postAssistantNotice(
+    chatId: string,
+    data: AssistantNoticeRequest
+  ): Promise<AssistantNoticeResponse> {
+    const response = await apiClient.post<AssistantNoticeResponse>(
+      `/api/v1/chats/${chatId}/assistant-notice`,
       data
     );
     return response.data;

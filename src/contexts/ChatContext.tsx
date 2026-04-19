@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -29,6 +30,7 @@ interface ChatContextValue {
   renameChat: (id: string, title: string) => Promise<void>;
   setActiveChatId: (id: string | null) => void;
   sendMessage: (content: string) => Promise<void>;
+  postAssistantNotice: (content: string, metadata?: Record<string, unknown>) => Promise<void>;
   toggleStar: (id: string) => Promise<void>;
   moveToProject: (chatId: string, projectId: string | null) => Promise<void>;
   loadMessages: (chatId: string) => Promise<void>;
@@ -44,6 +46,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatIdState] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const activeChatIdRef = useRef<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -93,6 +96,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const setActiveChatId = useCallback(
     (id: string | null) => {
+      activeChatIdRef.current = id;
       setActiveChatIdState(id);
       if (id) {
         setMessages([]);
@@ -116,6 +120,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         });
 
         setChats((prev) => [chat, ...prev]);
+        activeChatIdRef.current = chat.id;
         setActiveChatIdState(chat.id);
 
         if (message) {
@@ -144,6 +149,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setChats((prev) => prev.filter((c) => c.id !== id));
 
         if (activeChatId === id) {
+          activeChatIdRef.current = null;
           setActiveChatIdState(null);
           setMessages([]);
           navigate("/dashboard");
@@ -246,6 +252,33 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [activeChatId, createChat]
   );
 
+  const postAssistantNotice = useCallback(
+    async (content: string, metadata?: Record<string, unknown>) => {
+      if (!content.trim()) return;
+
+      let chatId = activeChatId;
+      if (!chatId) {
+        const chat = await createChat();
+        chatId = chat.id;
+      }
+
+      try {
+        const response = await chatsApi.postAssistantNotice(chatId, { content, metadata });
+        if (activeChatIdRef.current === chatId) {
+          setMessages((prev) => [...prev, response.assistant_message]);
+        }
+        setChats((prev) => prev.map((c) => (c.id === chatId ? response.chat : c)));
+      } catch (err) {
+        setError(getErrorMessage(err));
+      }
+    },
+    [activeChatId, createChat]
+  );
+
+  useEffect(() => {
+    activeChatIdRef.current = activeChatId;
+  }, [activeChatId]);
+
   // ─── Unassign Chats from Project ─────────────────────────────
   // Called when a project is deleted to update local state immediately
 
@@ -284,6 +317,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       renameChat,
       setActiveChatId,
       sendMessage,
+      postAssistantNotice,
       toggleStar,
       moveToProject,
       loadMessages,
@@ -306,6 +340,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       renameChat,
       setActiveChatId,
       sendMessage,
+      postAssistantNotice,
       toggleStar,
       moveToProject,
       loadMessages,

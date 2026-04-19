@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,11 +11,13 @@ import { Button } from "@/components/ui/button";
 export default function ChatPage() {
   const { chatId } = useParams<{ chatId?: string }>();
   const { user } = useAuth();
+  const profileUploadInputRef = useRef<HTMLInputElement>(null);
   const {
     activeChatId,
     messages,
     setActiveChatId,
     sendMessage,
+    postAssistantNotice,
     isStreaming,
     isLoadingMessages,
     error,
@@ -57,6 +59,10 @@ export default function ChatPage() {
     }
   }, [lastUserMessage, isStreaming, sendMessage]);
 
+  const handleUploadClick = useCallback(() => {
+    profileUploadInputRef.current?.click();
+  }, []);
+
   if (showLoading) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center">
@@ -83,11 +89,18 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {isEmpty ? (
         <>
-          <ChatEmptyState onSuggestionClick={sendMessage} />
-          <ChatInput onSend={sendMessage} isStreaming={isStreaming} />
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto">
+            <ChatEmptyState onSuggestionClick={sendMessage} onUploadClick={handleUploadClick} />
+          </div>
+          <ChatInput
+            onSend={sendMessage}
+            onAssistantNotice={postAssistantNotice}
+            isStreaming={isStreaming}
+            fileInputRef={profileUploadInputRef}
+          />
         </>
       ) : (
         <>
@@ -97,7 +110,12 @@ export default function ChatPage() {
             userName={user?.first_name}
             onRegenerate={!isStreaming ? handleRegenerate : undefined}
           />
-          <ChatInput onSend={sendMessage} isStreaming={isStreaming} />
+          <ChatInput
+            onSend={sendMessage}
+            onAssistantNotice={postAssistantNotice}
+            isStreaming={isStreaming}
+            fileInputRef={profileUploadInputRef}
+          />
         </>
       )}
     </div>

@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -45,6 +46,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatIdState] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const activeChatIdRef = useRef<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -94,6 +96,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const setActiveChatId = useCallback(
     (id: string | null) => {
+      activeChatIdRef.current = id;
       setActiveChatIdState(id);
       if (id) {
         setMessages([]);
@@ -117,6 +120,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         });
 
         setChats((prev) => [chat, ...prev]);
+        activeChatIdRef.current = chat.id;
         setActiveChatIdState(chat.id);
 
         if (message) {
@@ -145,6 +149,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setChats((prev) => prev.filter((c) => c.id !== id));
 
         if (activeChatId === id) {
+          activeChatIdRef.current = null;
           setActiveChatIdState(null);
           setMessages([]);
           navigate("/dashboard");
@@ -259,7 +264,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       try {
         const response = await chatsApi.postAssistantNotice(chatId, { content, metadata });
-        setMessages((prev) => [...prev, response.assistant_message]);
+        if (activeChatIdRef.current === chatId) {
+          setMessages((prev) => [...prev, response.assistant_message]);
+        }
         setChats((prev) => prev.map((c) => (c.id === chatId ? response.chat : c)));
       } catch (err) {
         setError(getErrorMessage(err));
@@ -267,6 +274,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     },
     [activeChatId, createChat]
   );
+
+  useEffect(() => {
+    activeChatIdRef.current = activeChatId;
+  }, [activeChatId]);
 
   // ─── Unassign Chats from Project ─────────────────────────────
   // Called when a project is deleted to update local state immediately

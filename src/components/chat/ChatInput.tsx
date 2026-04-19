@@ -30,12 +30,17 @@ export function ChatInput({
   const isOverLimit = trimmedLength > MESSAGE_MAX_LENGTH;
   const showCharCount = trimmedLength >= CHAR_COUNT_THRESHOLD;
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = value.trim();
-    if (!trimmed || isStreaming || isOverLimit) return;
-    onSend(trimmed);
-    setValue("");
-    textareaRef.current?.focus();
+    if (!trimmed || isStreaming || isOverLimit || isUploading) return;
+
+    try {
+      await Promise.resolve(onSend(trimmed));
+      setValue("");
+      textareaRef.current?.focus();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
   };
 
   const openFilePicker = () => {
@@ -120,7 +125,7 @@ export function ChatInput({
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      void handleSend();
     }
   };
 
@@ -169,7 +174,9 @@ export function ChatInput({
             size="icon"
             className="h-8 w-8 shrink-0 rounded-full"
             disabled={!value.trim() || isStreaming || isOverLimit || isUploading}
-            onClick={handleSend}
+            onClick={() => {
+              void handleSend();
+            }}
           >
             <ArrowUp className="h-4 w-4" />
           </Button>

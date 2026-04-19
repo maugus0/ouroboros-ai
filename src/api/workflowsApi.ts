@@ -54,12 +54,7 @@ export const workflowsApi = {
 
     const response = await apiClient.post<UploadProfileDocumentResponse>(
       "/api/v1/workflows/profile-upload",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      formData
     );
 
     return response.data;

@@ -36,11 +36,7 @@ describe("workflowsApi.uploadProfileDocument", () => {
     expect((body as FormData).get("document_type")).toBe("cv");
     expect((body as FormData).get("target_degree_hint")).toBe("MSc Data Science");
     expect((body as FormData).get("run_gap_analysis")).toBe("false");
-    expect(config).toEqual({
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    expect(config).toBeUndefined();
     expect(result).toEqual({
       message: "Profile created",
       data: { profile_id: "profile-123" },

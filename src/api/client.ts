@@ -42,6 +42,10 @@ const PUBLIC_ENDPOINTS = [
 // Request interceptor: attach Bearer token, proactive refresh
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    if (config.data instanceof FormData) {
+      config.headers.set("Content-Type", undefined);
+    }
+
     const isPublic = PUBLIC_ENDPOINTS.some((ep) => config.url?.includes(ep));
     if (isPublic) return config;
 

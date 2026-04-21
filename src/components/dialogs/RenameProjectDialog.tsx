@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CharCounter } from "@/components/ui/CharCounter";
 
 interface RenameProjectDialogProps {
   project: Project | null;
@@ -67,17 +68,7 @@ export function RenameProjectDialog({ project, open, onOpenChange }: RenameProje
               <Label htmlFor="rename-project-name" className="text-xs sm:text-sm">
                 Name
               </Label>
-              {trimmedName.length > PROJECT_NAME_MAX_LENGTH * 0.8 && (
-                <span
-                  className={`text-[10px] tabular-nums sm:text-xs ${
-                    trimmedName.length > PROJECT_NAME_MAX_LENGTH
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {trimmedName.length}/{PROJECT_NAME_MAX_LENGTH}
-                </span>
-              )}
+              <CharCounter value={name} maxLength={PROJECT_NAME_MAX_LENGTH} />
             </div>
             <Input
               id="rename-project-name"

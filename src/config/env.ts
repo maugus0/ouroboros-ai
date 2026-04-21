@@ -25,6 +25,11 @@ export const env = {
     return `${this.API_BASE_URL}/api/${this.API_VERSION}`;
   },
 
+  /** API path prefix (e.g., "/api/v1") for use in API modules */
+  get API_PATH(): string {
+    return `/api/${this.API_VERSION}`;
+  },
+
   TOKEN_REFRESH_INTERVAL: 10 * 60 * 1000,
   TOKEN_REFRESH_THRESHOLD: 2 * 60 * 1000,
 

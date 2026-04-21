@@ -4,6 +4,7 @@
  */
 
 import apiClient from "./client";
+import { env } from "@/config/env";
 import type {
   AssistantNoticeRequest,
   AssistantNoticeResponse,
@@ -19,12 +20,14 @@ import type {
   UpdateChatRequest,
 } from "@/types/chat.types";
 
+const API = env.API_PATH;
+
 export const chatsApi = {
   /**
    * Create a new chat, optionally with initial message and project.
    */
   async create(data: CreateChatRequest = {}): Promise<Chat> {
-    const response = await apiClient.post<Chat>("/api/v1/chats", data);
+    const response = await apiClient.post<Chat>(`${API}/chats`, data);
     return response.data;
   },
 
@@ -41,7 +44,7 @@ export const chatsApi = {
 
     const query = params.toString();
     const response = await apiClient.get<PaginatedChatsResponse>(
-      `/api/v1/chats${query ? `?${query}` : ""}`
+      `${API}/chats${query ? `?${query}` : ""}`
     );
     return response.data;
   },
@@ -50,7 +53,7 @@ export const chatsApi = {
    * Get a single chat by ID.
    */
   async get(chatId: string): Promise<Chat> {
-    const response = await apiClient.get<Chat>(`/api/v1/chats/${chatId}`);
+    const response = await apiClient.get<Chat>(`${API}/chats/${chatId}`);
     return response.data;
   },
 
@@ -58,7 +61,7 @@ export const chatsApi = {
    * Update chat (title, starred, project assignment).
    */
   async update(chatId: string, data: UpdateChatRequest): Promise<Chat> {
-    const response = await apiClient.patch<Chat>(`/api/v1/chats/${chatId}`, data);
+    const response = await apiClient.patch<Chat>(`${API}/chats/${chatId}`, data);
     return response.data;
   },
 
@@ -66,7 +69,7 @@ export const chatsApi = {
    * Soft delete a chat.
    */
   async delete(chatId: string): Promise<void> {
-    await apiClient.delete(`/api/v1/chats/${chatId}`);
+    await apiClient.delete(`${API}/chats/${chatId}`);
   },
 
   /**
@@ -74,7 +77,7 @@ export const chatsApi = {
    */
   async sendMessage(chatId: string, data: SendMessageRequest): Promise<SendMessageResponse> {
     const response = await apiClient.post<SendMessageResponse>(
-      `/api/v1/chats/${chatId}/messages`,
+      `${API}/chats/${chatId}/messages`,
       data
     );
     return response.data;
@@ -88,7 +91,7 @@ export const chatsApi = {
     data: AssistantNoticeRequest
   ): Promise<AssistantNoticeResponse> {
     const response = await apiClient.post<AssistantNoticeResponse>(
-      `/api/v1/chats/${chatId}/assistant-notice`,
+      `${API}/chats/${chatId}/assistant-notice`,
       data
     );
     return response.data;
@@ -108,7 +111,7 @@ export const chatsApi = {
 
     const query = params.toString();
     const response = await apiClient.get<PaginatedMessagesResponse>(
-      `/api/v1/chats/${chatId}/messages${query ? `?${query}` : ""}`
+      `${API}/chats/${chatId}/messages${query ? `?${query}` : ""}`
     );
     return response.data;
   },
@@ -117,7 +120,7 @@ export const chatsApi = {
    * Toggle star status on a chat.
    */
   async toggleStar(chatId: string, isStarred: boolean): Promise<Chat> {
-    const response = await apiClient.patch<Chat>(`/api/v1/chats/${chatId}`, {
+    const response = await apiClient.patch<Chat>(`${API}/chats/${chatId}`, {
       is_starred: isStarred,
     });
     return response.data;
@@ -127,7 +130,7 @@ export const chatsApi = {
    * Move chat to a project (or remove with project_id = "").
    */
   async moveToProject(chatId: string, projectId: string | null): Promise<Chat> {
-    const response = await apiClient.patch<Chat>(`/api/v1/chats/${chatId}`, {
+    const response = await apiClient.patch<Chat>(`${API}/chats/${chatId}`, {
       project_id: projectId ?? "",
     });
     return response.data;

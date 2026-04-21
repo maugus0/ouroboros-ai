@@ -1,17 +1,5 @@
-import { useEffect, useCallback, useReducer, useState } from "react";
+import { useEffect, useCallback, useReducer, useState, useMemo } from "react";
 import {
-  Folder,
-  GraduationCap,
-  Briefcase,
-  BookOpen,
-  FileText,
-  Globe,
-  Heart,
-  Lightbulb,
-  Star,
-  Target,
-  Users,
-  Zap,
   Calendar,
   Clock,
   MessageSquare,
@@ -24,6 +12,7 @@ import {
 import { projectsApi } from "@/api/projectsApi";
 import { getErrorMessage } from "@/api/client";
 import type { Project } from "@/types/chat.types";
+import { getProjectIcon } from "@/lib/projectTheme";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -37,32 +26,9 @@ interface ProjectIconProps {
 }
 
 function ProjectIcon({ iconId, className }: ProjectIconProps) {
-  switch (iconId) {
-    case "graduation-cap":
-      return <GraduationCap className={className} />;
-    case "briefcase":
-      return <Briefcase className={className} />;
-    case "book-open":
-      return <BookOpen className={className} />;
-    case "file-text":
-      return <FileText className={className} />;
-    case "globe":
-      return <Globe className={className} />;
-    case "heart":
-      return <Heart className={className} />;
-    case "lightbulb":
-      return <Lightbulb className={className} />;
-    case "star":
-      return <Star className={className} />;
-    case "target":
-      return <Target className={className} />;
-    case "users":
-      return <Users className={className} />;
-    case "zap":
-      return <Zap className={className} />;
-    default:
-      return <Folder className={className} />;
-  }
+  const Icon = useMemo(() => getProjectIcon(iconId), [iconId]);
+  // eslint-disable-next-line react-hooks/static-components -- Icon is intentionally dynamic based on iconId
+  return <Icon className={className} />;
 }
 
 type FetchState = {

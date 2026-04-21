@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useProjects } from "@/contexts/ProjectContext";
 import { getErrorMessage } from "@/api/client";
 import { PROJECT_NAME_MAX_LENGTH, PROJECT_DESCRIPTION_MAX_LENGTH } from "@/types/chat.types";
+import { PROJECT_COLORS, DEFAULT_PROJECT_COLOR } from "@/lib/projectTheme";
 import {
   Dialog,
   DialogContent,
@@ -15,17 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-const COLORS = [
-  "#3B82F6", // blue
-  "#10B981", // green
-  "#F59E0B", // amber
-  "#EF4444", // red
-  "#8B5CF6", // violet
-  "#EC4899", // pink
-  "#06B6D4", // cyan
-  "#F97316", // orange
-];
+import { CharCounter } from "@/components/ui/CharCounter";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -36,7 +27,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
   const { createProject } = useProjects();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [color, setColor] = useState(COLORS[0]);
+  const [color, setColor] = useState(DEFAULT_PROJECT_COLOR);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const trimmedName = name.trim();
@@ -59,7 +50,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
       onOpenChange(false);
       setName("");
       setDescription("");
-      setColor(COLORS[0]);
+      setColor(DEFAULT_PROJECT_COLOR);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -71,7 +62,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     if (!open) {
       setName("");
       setDescription("");
-      setColor(COLORS[0]);
+      setColor(DEFAULT_PROJECT_COLOR);
     }
     onOpenChange(open);
   };
@@ -91,17 +82,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               <Label htmlFor="project-name" className="text-xs sm:text-sm">
                 Name
               </Label>
-              {trimmedName.length > PROJECT_NAME_MAX_LENGTH * 0.8 && (
-                <span
-                  className={`text-[10px] tabular-nums sm:text-xs ${
-                    trimmedName.length > PROJECT_NAME_MAX_LENGTH
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {trimmedName.length}/{PROJECT_NAME_MAX_LENGTH}
-                </span>
-              )}
+              <CharCounter value={name} maxLength={PROJECT_NAME_MAX_LENGTH} />
             </div>
             <Input
               id="project-name"
@@ -119,17 +100,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
               <Label htmlFor="project-description" className="text-xs sm:text-sm">
                 Description (optional)
               </Label>
-              {trimmedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH * 0.8 && (
-                <span
-                  className={`text-[10px] tabular-nums sm:text-xs ${
-                    trimmedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {trimmedDescription.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
-                </span>
-              )}
+              <CharCounter value={description} maxLength={PROJECT_DESCRIPTION_MAX_LENGTH} />
             </div>
             <Textarea
               id="project-description"
@@ -144,7 +115,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
           <div className="space-y-1.5 sm:space-y-2">
             <Label className="text-xs sm:text-sm">Color</Label>
             <div className="flex flex-wrap gap-2">
-              {COLORS.map((c) => (
+              {PROJECT_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"

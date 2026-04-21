@@ -179,11 +179,7 @@ export function ChatInput({
           </Button>
         </div>
         <div className="mt-1.5 flex flex-col gap-1 sm:mt-2">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-center flex-1 text-[10px] leading-4 text-muted-foreground sm:text-xs">
-              Use the paperclip to upload a CV, transcript, or supporting document for profile
-              parsing.
-            </p>
+          <div className="flex items-start justify-end gap-3">
             <CharCounter
               value={value}
               maxLength={MESSAGE_MAX_LENGTH}

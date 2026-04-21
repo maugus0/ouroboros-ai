@@ -1,4 +1,4 @@
-import { Upload, Search, UserCheck, FileText } from "lucide-react";
+import { Upload, GraduationCap, UserCheck, Target } from "lucide-react";
 
 interface ChatEmptyStateProps {
   onSuggestionClick: (text: string) => void;
@@ -30,11 +30,11 @@ const suggestions: Suggestion[] = [
     action: "upload",
   },
   {
-    icon: Search,
-    title: "Find scholarships",
-    description: "matching my profile",
+    icon: GraduationCap,
+    title: "Find programs",
+    description: "matching my goals and budget",
     action: "prompt",
-    prompt: "Find scholarships matching my Student Profile on ORB.",
+    prompt: "Find master's programs in Computer Science under $40,000 in the US or UK.",
   },
   {
     icon: UserCheck,
@@ -44,12 +44,11 @@ const suggestions: Suggestion[] = [
     prompt: "Review my student profile on ORB and suggest improvements for my resume.",
   },
   {
-    icon: FileText,
-    title: "Draft a Statement",
-    description: "of Purpose for applications",
+    icon: Target,
+    title: "Best programs for me",
+    description: "based on my profile",
     action: "prompt",
-    prompt:
-      "Help me draft a Statement of Purpose for my application based on details stored with ORB.",
+    prompt: "What programs match my profile and have upcoming deadlines?",
   },
 ];
 

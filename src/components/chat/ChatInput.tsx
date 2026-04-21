@@ -12,7 +12,7 @@ interface ChatInputProps {
   onSend: (content: string) => Promise<void> | void;
   onAssistantNotice: (content: string, metadata?: Record<string, unknown>) => Promise<void> | void;
   isStreaming: boolean;
-  fileInputRef: RefObject<HTMLInputElement | null>;
+  fileInputRef: RefObject<HTMLInputElement>;
 }
 
 export function ChatInput({

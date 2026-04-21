@@ -16,30 +16,20 @@ const apiClient: AxiosInstance = axios.create({
 });
 
 let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
-let failedQueue: Array<{
-  resolve: (token: string) => void;
+let refreshQueue: Array<{
+  resolve: (value: string | InternalAxiosRequestConfig) => void;
   reject: (error: Error) => void;
 }> = [];
 
-function subscribeTokenRefresh(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
-}
-
-function onTokenRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
-  refreshSubscribers = [];
-}
-
-function processFailedQueue(error: Error | null, token: string | null) {
-  failedQueue.forEach((promise) => {
+function processRefreshQueue(error: Error | null, token: string | null) {
+  refreshQueue.forEach((promise) => {
     if (error) {
       promise.reject(error);
     } else if (token) {
       promise.resolve(token);
     }
   });
-  failedQueue = [];
+  refreshQueue = [];
 }
 
 const PUBLIC_ENDPOINTS = [
@@ -82,7 +72,11 @@ function handleAuthFailure(): void {
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     if (config.data instanceof FormData) {
-      delete config.headers["Content-Type"];
+      if (typeof config.headers.delete === "function") {
+        config.headers.delete("Content-Type");
+      } else {
+        delete config.headers["Content-Type"];
+      }
     }
 
     if (isPublicEndpoint(config.url)) return config;
@@ -94,18 +88,22 @@ apiClient.interceptors.request.use(
         isRefreshing = true;
         try {
           accessToken = await refreshAccessToken();
-          onTokenRefreshed(accessToken);
-        } catch {
+          processRefreshQueue(null, accessToken);
+        } catch (refreshError) {
+          processRefreshQueue(refreshError as Error, null);
           handleAuthFailure();
           return Promise.reject(new Error("Token refresh failed"));
         } finally {
           isRefreshing = false;
         }
       } else {
-        return new Promise<InternalAxiosRequestConfig>((resolve) => {
-          subscribeTokenRefresh((token: string) => {
-            config.headers.Authorization = `Bearer ${token}`;
-            resolve(config);
+        return new Promise<InternalAxiosRequestConfig>((resolve, reject) => {
+          refreshQueue.push({
+            resolve: (token) => {
+              config.headers.Authorization = `Bearer ${token}`;
+              resolve(config);
+            },
+            reject,
           });
         });
       }
@@ -126,28 +124,29 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token: string) => {
+          refreshQueue.push({
+            resolve: (token) => {
               originalRequest.headers.Authorization = `Bearer ${token}`;
               resolve(apiClient(originalRequest));
             },
-            reject: (err: Error) => reject(err),
+            reject,
           });
         });
       }
 
-      originalRequest._retry = true;
       isRefreshing = true;
 
       try {
         const newToken = await refreshAccessToken();
-        processFailedQueue(null, newToken);
+        processRefreshQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        processFailedQueue(refreshError as Error, null);
+        processRefreshQueue(refreshError as Error, null);
         handleAuthFailure();
         return Promise.reject(error);
       } finally {

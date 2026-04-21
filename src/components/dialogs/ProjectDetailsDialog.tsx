@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useReducer, useState, useMemo } from "react";
+import { useEffect, useCallback, useReducer, useState } from "react";
 import {
   Calendar,
   Clock,
@@ -26,9 +26,9 @@ interface ProjectIconProps {
 }
 
 function ProjectIcon({ iconId, className }: ProjectIconProps) {
-  const Icon = useMemo(() => getProjectIcon(iconId), [iconId]);
-  // eslint-disable-next-line react-hooks/static-components -- Icon is intentionally dynamic based on iconId
-  return <Icon className={className} />;
+  const IconComponent = getProjectIcon(iconId);
+  // eslint-disable-next-line react-hooks/static-components -- Intentional: IconComponent is derived from props
+  return <IconComponent className={className} />;
 }
 
 type FetchState = {

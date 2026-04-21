@@ -7,7 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi, getErrorMessage } from "@/api/authApi";
-import { parseUTC } from "@/utils/dateUtils";
+import {
+  formatRelativeTime as sharedFormatRelativeTime,
+  formatDateTime as sharedFormatDateTime,
+} from "@/utils/dateUtils";
 import type { AuthSession } from "@/types/auth";
 import {
   Loader2,
@@ -45,25 +48,11 @@ function parseUserAgent(ua: string | null): { icon: typeof Monitor; label: strin
 
 function formatRelativeTime(iso: string | null): string {
   if (!iso) return "Unknown";
-  const diff = Date.now() - parseUTC(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return parseUTC(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return sharedFormatRelativeTime(iso);
 }
 
 function formatDateTime(iso: string): string {
-  return parseUTC(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return sharedFormatDateTime(iso);
 }
 
 export default function SettingsPage() {

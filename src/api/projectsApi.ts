@@ -4,6 +4,7 @@
  */
 
 import apiClient from "./client";
+import { env } from "@/config/env";
 import type {
   CreateProjectRequest,
   PaginatedProjectsResponse,
@@ -12,12 +13,14 @@ import type {
   UpdateProjectRequest,
 } from "@/types/chat.types";
 
+const API = env.API_PATH;
+
 export const projectsApi = {
   /**
    * Create a new project.
    */
   async create(data: CreateProjectRequest): Promise<Project> {
-    const response = await apiClient.post<Project>("/api/v1/projects", data);
+    const response = await apiClient.post<Project>(`${API}/projects`, data);
     return response.data;
   },
 
@@ -31,7 +34,7 @@ export const projectsApi = {
 
     const query = params.toString();
     const response = await apiClient.get<PaginatedProjectsResponse>(
-      `/api/v1/projects${query ? `?${query}` : ""}`
+      `${API}/projects${query ? `?${query}` : ""}`
     );
     return response.data;
   },
@@ -40,7 +43,7 @@ export const projectsApi = {
    * Get a single project by ID.
    */
   async get(projectId: string): Promise<Project> {
-    const response = await apiClient.get<Project>(`/api/v1/projects/${projectId}`);
+    const response = await apiClient.get<Project>(`${API}/projects/${projectId}`);
     return response.data;
   },
 
@@ -48,7 +51,7 @@ export const projectsApi = {
    * Update project metadata.
    */
   async update(projectId: string, data: UpdateProjectRequest): Promise<Project> {
-    const response = await apiClient.patch<Project>(`/api/v1/projects/${projectId}`, data);
+    const response = await apiClient.patch<Project>(`${API}/projects/${projectId}`, data);
     return response.data;
   },
 
@@ -56,6 +59,6 @@ export const projectsApi = {
    * Soft delete a project.
    */
   async delete(projectId: string): Promise<void> {
-    await apiClient.delete(`/api/v1/projects/${projectId}`);
+    await apiClient.delete(`${API}/projects/${projectId}`);
   },
 };

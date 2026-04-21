@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { Gender, Interest } from "@/types/auth";
-import { parseUTC } from "@/utils/dateUtils";
+import { formatDateTime } from "@/utils/dateUtils";
 import { getInitials } from "@/lib/utils";
 import {
   Loader2,
@@ -47,13 +47,7 @@ function formatInterest(i: string | null): string {
 
 function formatDate(iso: string | null): string {
   if (!iso) return "Never";
-  return parseUTC(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 export default function ProfilePage() {

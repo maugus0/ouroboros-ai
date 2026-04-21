@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import apiClient from "./client";
 import { workflowsApi } from "./workflowsApi";
+import { env } from "@/config/env";
 
 vi.mock("./client", () => ({
   default: {
@@ -29,7 +30,7 @@ describe("workflowsApi.uploadProfileDocument", () => {
     expect(apiClient.post).toHaveBeenCalledTimes(1);
 
     const [url, body, config] = vi.mocked(apiClient.post).mock.calls[0];
-    expect(url).toBe("/api/v1/workflows/profile-upload");
+    expect(url).toBe(`${env.API_PATH}/workflows/profile-upload`);
     expect(body).toBeInstanceOf(FormData);
     expect((body as FormData).get("file")).toBe(file);
     expect((body as FormData).get("intent")).toBe("profile_completion");

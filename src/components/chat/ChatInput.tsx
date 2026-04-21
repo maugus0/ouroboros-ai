@@ -3,6 +3,7 @@ import TextareaAutosize from "react-textarea-autosize";
 import { ArrowUp, Loader2, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { CharCounter } from "@/components/ui/CharCounter";
 import { getErrorMessage } from "@/api/client";
 import { workflowsApi } from "@/api/workflowsApi";
 import { MESSAGE_MAX_LENGTH } from "@/types/chat.types";
@@ -14,8 +15,6 @@ interface ChatInputProps {
   fileInputRef: RefObject<HTMLInputElement>;
 }
 
-const CHAR_COUNT_THRESHOLD = MESSAGE_MAX_LENGTH - 500;
-
 export function ChatInput({
   onSend,
   onAssistantNotice,
@@ -26,9 +25,7 @@ export function ChatInput({
   const [isUploading, setIsUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const trimmedLength = value.trim().length;
-  const isOverLimit = trimmedLength > MESSAGE_MAX_LENGTH;
-  const showCharCount = trimmedLength >= CHAR_COUNT_THRESHOLD;
+  const isOverLimit = value.trim().length > MESSAGE_MAX_LENGTH;
 
   const handleSend = async () => {
     const trimmed = value.trim();
@@ -182,20 +179,13 @@ export function ChatInput({
           </Button>
         </div>
         <div className="mt-1.5 flex flex-col gap-1 sm:mt-2">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-center flex-1 text-[10px] leading-4 text-muted-foreground sm:text-xs">
-              Use the paperclip to upload a CV, transcript, or supporting document for profile
-              parsing.
-            </p>
-            {showCharCount && (
-              <span
-                className={`shrink-0 text-[10px] tabular-nums sm:text-xs ${
-                  isOverLimit ? "text-destructive" : "text-muted-foreground"
-                }`}
-              >
-                {trimmedLength.toLocaleString()}/{MESSAGE_MAX_LENGTH.toLocaleString()}
-              </span>
-            )}
+          <div className="flex items-start justify-end gap-3">
+            <CharCounter
+              value={value}
+              maxLength={MESSAGE_MAX_LENGTH}
+              threshold={0.95}
+              className="shrink-0"
+            />
           </div>
           <p className="text-center text-[10px] text-muted-foreground sm:text-xs">
             Ouroboros is AI and can make mistakes. Please double-check responses.

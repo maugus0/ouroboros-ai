@@ -1,24 +1,17 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  Folder,
-  GraduationCap,
-  Briefcase,
-  BookOpen,
-  FileText,
-  Globe,
-  Heart,
-  Lightbulb,
-  Star,
-  Target,
-  Users,
-  Zap,
-} from "lucide-react";
+import { Folder } from "lucide-react";
 import { useProjects } from "@/contexts/ProjectContext";
 import { getErrorMessage } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { PROJECT_NAME_MAX_LENGTH, PROJECT_DESCRIPTION_MAX_LENGTH } from "@/types/chat.types";
 import type { Project } from "@/types/chat.types";
+import {
+  PROJECT_COLORS,
+  PROJECT_ICONS,
+  DEFAULT_PROJECT_COLOR,
+  getProjectIcon,
+} from "@/lib/projectTheme";
 import {
   Dialog,
   DialogContent,
@@ -32,32 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-
-const COLORS = [
-  "#3B82F6", // blue
-  "#10B981", // green
-  "#F59E0B", // amber
-  "#EF4444", // red
-  "#8B5CF6", // violet
-  "#EC4899", // pink
-  "#06B6D4", // cyan
-  "#F97316", // orange
-];
-
-const ICONS = [
-  { id: "folder", Icon: Folder, label: "Folder" },
-  { id: "graduation-cap", Icon: GraduationCap, label: "Education" },
-  { id: "briefcase", Icon: Briefcase, label: "Work" },
-  { id: "book-open", Icon: BookOpen, label: "Research" },
-  { id: "file-text", Icon: FileText, label: "Documents" },
-  { id: "globe", Icon: Globe, label: "Global" },
-  { id: "heart", Icon: Heart, label: "Favorites" },
-  { id: "lightbulb", Icon: Lightbulb, label: "Ideas" },
-  { id: "star", Icon: Star, label: "Important" },
-  { id: "target", Icon: Target, label: "Goals" },
-  { id: "users", Icon: Users, label: "Collaboration" },
-  { id: "zap", Icon: Zap, label: "Quick" },
-];
+import { CharCounter } from "@/components/ui/CharCounter";
 
 interface EditProjectDialogProps {
   project: Project | null;
@@ -69,7 +37,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
   const { updateProject } = useProjects();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [color, setColor] = useState(COLORS[0]);
+  const [color, setColor] = useState(DEFAULT_PROJECT_COLOR);
   const [icon, setIcon] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -77,7 +45,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
     if (project) {
       setName(project.name);
       setDescription(project.description ?? "");
-      setColor(project.color ?? COLORS[0]);
+      setColor(project.color ?? DEFAULT_PROJECT_COLOR);
       setIcon(project.icon);
     }
   }, [project]);
@@ -91,7 +59,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
     project &&
     (trimmedName !== project.name ||
       trimmedDescription !== (project.description ?? "") ||
-      color !== (project.color ?? COLORS[0]) ||
+      color !== (project.color ?? DEFAULT_PROJECT_COLOR) ||
       icon !== project.icon);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,8 +83,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
     }
   };
 
-  const selectedIcon = ICONS.find((i) => i.id === icon);
-  const IconComponent = selectedIcon?.Icon ?? Folder;
+  const IconComponent = getProjectIcon(icon);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -144,17 +111,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
               <Label htmlFor="edit-project-name" className="text-xs sm:text-sm">
                 Name
               </Label>
-              {trimmedName.length > PROJECT_NAME_MAX_LENGTH * 0.8 && (
-                <span
-                  className={`text-[10px] tabular-nums sm:text-xs ${
-                    trimmedName.length > PROJECT_NAME_MAX_LENGTH
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {trimmedName.length}/{PROJECT_NAME_MAX_LENGTH}
-                </span>
-              )}
+              <CharCounter value={name} maxLength={PROJECT_NAME_MAX_LENGTH} />
             </div>
             <Input
               id="edit-project-name"
@@ -173,17 +130,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
               <Label htmlFor="edit-project-description" className="text-xs sm:text-sm">
                 Description
               </Label>
-              {trimmedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH * 0.8 && (
-                <span
-                  className={`text-[10px] tabular-nums sm:text-xs ${
-                    trimmedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {trimmedDescription.length}/{PROJECT_DESCRIPTION_MAX_LENGTH}
-                </span>
-              )}
+              <CharCounter value={description} maxLength={PROJECT_DESCRIPTION_MAX_LENGTH} />
             </div>
             <Textarea
               id="edit-project-description"
@@ -199,7 +146,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
           <div className="space-y-1.5 sm:space-y-2">
             <Label className="text-xs sm:text-sm">Color</Label>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
-              {COLORS.map((c) => (
+              {PROJECT_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
@@ -217,7 +164,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
           <div className="space-y-1.5 sm:space-y-2">
             <Label className="text-xs sm:text-sm">Icon</Label>
             <div className="flex flex-wrap gap-1">
-              {ICONS.map(({ id, Icon, label }) => (
+              {PROJECT_ICONS.map(({ id, icon: Icon, label }) => (
                 <button
                   key={id}
                   type="button"

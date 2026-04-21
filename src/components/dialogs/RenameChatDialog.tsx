@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CharCounter } from "@/components/ui/CharCounter";
 
 interface RenameChatDialogProps {
   chat: Chat | null;
@@ -67,17 +68,7 @@ export function RenameChatDialog({ chat, open, onOpenChange }: RenameChatDialogP
               <Label htmlFor="rename-chat-title" className="text-xs sm:text-sm">
                 Title
               </Label>
-              {trimmedTitle.length > CHAT_TITLE_MAX_LENGTH * 0.8 && (
-                <span
-                  className={`text-[10px] tabular-nums sm:text-xs ${
-                    trimmedTitle.length > CHAT_TITLE_MAX_LENGTH
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {trimmedTitle.length}/{CHAT_TITLE_MAX_LENGTH}
-                </span>
-              )}
+              <CharCounter value={title} maxLength={CHAT_TITLE_MAX_LENGTH} />
             </div>
             <Input
               id="rename-chat-title"

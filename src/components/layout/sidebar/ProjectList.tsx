@@ -2,30 +2,18 @@ import { useState } from "react";
 import {
   FolderPlus,
   ChevronRight,
-  Folder,
   MoreHorizontal,
   Settings,
   Trash2,
   MessageSquare,
   MessageSquarePlus,
   Info,
-  GraduationCap,
-  Briefcase,
-  BookOpen,
-  FileText,
-  Globe,
-  Heart,
-  Lightbulb,
-  Star,
-  Target,
-  Users,
-  Zap,
-  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useProjects } from "@/contexts/ProjectContext";
 import { useChat } from "@/contexts/ChatContext";
 import { getErrorMessage } from "@/api/client";
+import { getProjectIcon } from "@/lib/projectTheme";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
@@ -51,28 +39,6 @@ import { CreateProjectDialog } from "@/components/dialogs/CreateProjectDialog";
 import { EditProjectDialog } from "@/components/dialogs/EditProjectDialog";
 import { ProjectDetailsDialog } from "@/components/dialogs/ProjectDetailsDialog";
 import type { Project } from "@/types/chat.types";
-
-const PROJECT_ICONS: Record<string, LucideIcon> = {
-  folder: Folder,
-  "graduation-cap": GraduationCap,
-  briefcase: Briefcase,
-  "book-open": BookOpen,
-  "file-text": FileText,
-  globe: Globe,
-  heart: Heart,
-  lightbulb: Lightbulb,
-  star: Star,
-  target: Target,
-  users: Users,
-  zap: Zap,
-};
-
-function getProjectIcon(iconId: string | null): LucideIcon {
-  if (iconId && PROJECT_ICONS[iconId]) {
-    return PROJECT_ICONS[iconId];
-  }
-  return Folder;
-}
 
 interface ProjectListProps {
   onChatClick: (chatId: string) => void;

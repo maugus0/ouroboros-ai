@@ -7,10 +7,10 @@ React + Vite + TypeScript frontend for **OuroborosAI** — a Multi-Agent AI Syst
 - **Auth**: Login and registration at `/login` with protected routes. The app talks to the **Ouroboros Orchestrator** backend: phone-based signup with OTP, login (username or phone + password), optional MFA, token refresh, and profile completion at `/profile/complete` when required.
 - **Dashboard**: After login, users land on an agentic AI chat interface (Claude-style):
   - **Sidebar**: OuroborosAI branding, **New Chat**, **Starred** chats, **Projects** (folders with nested chats), **recent chats** grouped by date (unassigned only), nav (Profile, Programs, Scholarships, Applications), Settings / Assessments / Get Help, and a user block at the bottom (avatar, truncated name/email with tooltips, dropdown: Account, Billing, Log out).
-  - **Chat**: Empty state with suggestion cards; message bubbles (user + assistant with markdown); typing indicator while the assistant responds; input bar with attach (UI) and send. Messages, stars, and projects are loaded from the **backend** (`/api/v1/chats`, `/api/v1/projects`).
+  - **Chat**: Empty state with suggestion cards; message bubbles (user + assistant with markdown); typing indicator while the assistant responds; input bar with CV/transcript upload (via `/api/v1/workflows/profile-upload`) and send. Profile upload triggers clarification questions shown as assistant notices. Messages, stars, and projects are loaded from the **backend** (`/api/v1/chats`, `/api/v1/projects`).
   - **Pages**: Profile, Programs, Scholarships, Applications (card on mobile, table on desktop where applicable), Settings (including dark mode), Get Help, Assessments, Billing.
 - **Theming**: Dark/light mode via `ThemeContext`; preference persisted in `localStorage`; Settings page can align with the same preference.
-- **API**: Configurable via Vite env vars (`VITE_API_BASE_URL`, `VITE_API_VERSION`). HTTP calls use `src/api/client.ts` (base URL = orchestrator host; paths include `/api/v1/...`). Default base URL in dev: `http://localhost:8000`.
+- **API**: Configurable via Vite env vars (`VITE_API_BASE_URL`, `VITE_API_VERSION`). HTTP calls use `src/api/client.ts` (base URL = orchestrator host). API paths use the centralized `API_PATH` from `src/config/env.ts` (e.g., `/api/v1`). Default base URL in dev: `http://localhost:8000`.
 
 ## Prerequisites
 
@@ -45,11 +45,11 @@ Dev server runs at **http://localhost:8080** (see `vite.config.ts`).
 
 The app reads env vars via Vite (`import.meta.env`). Shared values are centralized in `src/config/env.ts` (including derived `API_URL` for logging and future use).
 
-| Variable               | Description                          | Default                 |
-|------------------------|--------------------------------------|-------------------------|
-| `VITE_API_BASE_URL`    | Orchestrator backend base URL       | `http://localhost:8000` |
-| `VITE_API_VERSION`     | API version segment (`/api/{ver}`) | `v1`                    |
-| `VITE_APP_VERSION`     | Release label (CI sets from git tag) | empty in local dev      |
+| Variable               | Description                                      | Default                 |
+|------------------------|--------------------------------------------------|-------------------------|
+| `VITE_API_BASE_URL`    | Orchestrator backend base URL                   | `http://localhost:8000` |
+| `VITE_API_VERSION`     | API version segment (`/api/{ver}`), used by all API modules | `v1`                    |
+| `VITE_APP_VERSION`     | Release label (CI sets from git tag)            | empty in local dev      |
 
 ## Routing (React Router)
 
@@ -83,21 +83,22 @@ src/
     authApi.ts
     chatsApi.ts           # Chats, messages, star, project assignment
     projectsApi.ts        # Projects CRUD
+    workflowsApi.ts       # Profile upload (CV/transcript parsing)
   components/
     auth/                 # Login, signup, OTP, MFA, profile completion, etc.
     chat/                 # ChatEmptyState, ChatInput, ChatMessages, MessageBubble, TypingIndicator
-    dialogs/              # CreateProjectDialog, RenameProject/Chat dialogs
+    dialogs/              # CreateProjectDialog, EditProjectDialog, ProjectDetailsDialog, RenameProject/Chat dialogs
     layout/
       DashboardLayout.tsx # ProjectProvider → ChatProvider → sidebar shell
       AppSidebar.tsx
       DashboardHeader.tsx
       sidebar/            # StarredChats, ProjectList, ChatHistory
-    ui/                   # shadcn/ui primitives
+    ui/                   # shadcn/ui primitives + CharCounter
     ErrorBoundary.tsx
     LoadingSpinner.tsx
     ProtectedRoute.tsx
   config/
-    env.ts
+    env.ts                # Centralized env config (API_BASE_URL, API_PATH, API_VERSION)
   contexts/
     AuthContext.tsx
     ChatContext.tsx       # Chats/messages; calls chatsApi
@@ -105,10 +106,9 @@ src/
     ThemeContext.tsx
   hooks/
     use-mobile.tsx
-    use-toast.ts
   lib/
-    utils.ts              # cn(), getInitials(), etc.
-    mock-data.ts          # Placeholder (no mock chats; real API in use)
+    utils.ts              # cn(), getInitials(), date formatters (re-export)
+    projectTheme.ts       # PROJECT_COLORS, PROJECT_ICONS, getProjectIcon
   pages/
     Login.tsx
     ChatPage.tsx
@@ -125,10 +125,9 @@ src/
   types/
     auth.ts
     chat.types.ts         # Chat, Message, Project types aligned with Orchestrator API
-    api.types.ts
   utils/
     tokenStorage.ts
-    dateUtils.ts
+    dateUtils.ts          # parseUTC, formatDate, formatDateTime, formatTime, formatRelativeTime
     phoneUtils.ts
   App.tsx
   main.tsx
@@ -142,6 +141,8 @@ The UI expects the **Ouroboros Orchestrator** OpenAPI surface under `{VITE_API_B
 
 - **Chats**: create/list/get/patch/delete chat; list/send messages; filters for starred, `project_id`, `no_project`.
 - **Projects**: create/list/get/patch/delete project; chats can be assigned or removed via chat `PATCH`.
+- **Workflows**: `/api/v1/workflows/profile-upload` (CV/transcript upload for profile parsing).
+- **Assistant Notices**: `/api/v1/chats/{id}/assistant-notice` (post assistant-authored notices without user message).
 
 Auth uses the same host for `/auth/*` and refresh as configured in `client.ts`.
 
@@ -171,19 +172,20 @@ All inputs are trimmed before submission. The send button and submit buttons are
 
 ## Scripts
 
-| Script               | Description                          |
-|----------------------|--------------------------------------|
-| `npm run dev`        | Start dev server (port 8080)         |
-| `npm run build`      | Production build → `dist/`           |
-| `npm run build:gh-pages` | Build for GitHub Pages            |
-| `npm run preview`    | Preview production build locally     |
-| `npm run lint`       | ESLint                               |
-| `npm run format`     | Prettier (write)                     |
-| `npm run format:check` | Prettier (check only)              |
-| `npm run test`       | Vitest (watch)                       |
-| `npm run test:ci`    | Vitest single run + coverage         |
-| `npm run test:watch` | Vitest watch                         |
-| `npm run deploy`     | Build and deploy to GitHub Pages     |
+| Script               | Description                                    |
+|----------------------|------------------------------------------------|
+| `npm run dev`        | Start dev server (port 8080)                   |
+| `npm run build`      | Production build → `dist/`                     |
+| `npm run build:dev`  | Development build (unminified, with sourcemaps)|
+| `npm run build:gh-pages` | Build for GitHub Pages (same as `build`)   |
+| `npm run preview`    | Preview production build locally               |
+| `npm run lint`       | ESLint                                         |
+| `npm run format`     | Prettier (write)                               |
+| `npm run format:check` | Prettier (check only)                        |
+| `npm run test`       | Vitest (watch)                                 |
+| `npm run test:ci`    | Vitest single run + coverage                   |
+| `npm run test:watch` | Vitest watch                                   |
+| `npm run deploy`     | Build and deploy to GitHub Pages               |
 
 ## Deployment — ouroboros.chat
 

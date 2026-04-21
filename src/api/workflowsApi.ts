@@ -1,4 +1,7 @@
 import apiClient from "./client";
+import { env } from "@/config/env";
+
+const API = env.API_PATH;
 
 export interface ClarificationQueueItem {
   field?: string;
@@ -53,7 +56,7 @@ export const workflowsApi = {
     }
 
     const response = await apiClient.post<UploadProfileDocumentResponse>(
-      "/api/v1/workflows/profile-upload",
+      `${API}/workflows/profile-upload`,
       formData
     );
 

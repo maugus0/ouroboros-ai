@@ -22,7 +22,6 @@ export interface UploadProfileDocumentRequest {
   file: File;
   intent?: string;
   documentType?: "cv" | "transcript" | "unknown";
-  targetDegreeHint?: string;
   runGapAnalysis?: boolean;
 }
 

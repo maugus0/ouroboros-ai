@@ -23,7 +23,6 @@ describe("workflowsApi.uploadProfileDocument", () => {
     const result = await workflowsApi.uploadProfileDocument({
       file,
       documentType: "cv",
-      targetDegreeHint: "MSc Data Science",
       runGapAnalysis: false,
     });
 

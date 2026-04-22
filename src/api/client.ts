@@ -12,7 +12,7 @@ import { env } from "@/config/env";
 const apiClient: AxiosInstance = axios.create({
   baseURL: env.API_BASE_URL,
   headers: { "Content-Type": "application/json" },
-  timeout: 30_000,
+  timeout: env.API_TIMEOUT,
 });
 
 let isRefreshing = false;

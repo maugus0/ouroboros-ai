@@ -6,13 +6,67 @@ import { Button } from "@/components/ui/button";
 import { CharCounter } from "@/components/ui/CharCounter";
 import { getErrorMessage } from "@/api/client";
 import { workflowsApi } from "@/api/workflowsApi";
-import { MESSAGE_MAX_LENGTH } from "@/types/chat.types";
+import { MESSAGE_MAX_LENGTH, type AgentReasoning } from "@/types/chat.types";
 
 interface ChatInputProps {
   onSend: (content: string) => Promise<void> | void;
   onAssistantNotice: (content: string, metadata?: Record<string, unknown>) => Promise<void> | void;
   isStreaming: boolean;
   fileInputRef: RefObject<HTMLInputElement>;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function toAgentReasoning(value: unknown): AgentReasoning | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const approach = candidate.approach;
+  const decisionFactors = candidate.decision_factors;
+
+  if (typeof approach !== "string" || !isStringArray(decisionFactors)) {
+    return undefined;
+  }
+
+  const parseDecisions = candidate.parse_decisions;
+  if (parseDecisions !== undefined && !isStringArray(parseDecisions)) {
+    return undefined;
+  }
+
+  const clarificationReasons = candidate.clarification_reasons;
+  if (clarificationReasons !== undefined && !isStringArray(clarificationReasons)) {
+    return undefined;
+  }
+
+  const confidence = candidate.confidence;
+  if (confidence !== undefined && typeof confidence !== "number") {
+    return undefined;
+  }
+
+  const nextField = candidate.next_field;
+  if (nextField !== undefined && nextField !== null && typeof nextField !== "string") {
+    return undefined;
+  }
+
+  const safeParseDecisions = parseDecisions as string[] | undefined;
+  const safeClarificationReasons = clarificationReasons as string[] | undefined;
+  const safeConfidence = confidence as number | undefined;
+  const safeNextField = nextField as string | null | undefined;
+
+  return {
+    approach,
+    decision_factors: decisionFactors,
+    ...(safeParseDecisions !== undefined ? { parse_decisions: safeParseDecisions } : {}),
+    ...(safeClarificationReasons !== undefined
+      ? { clarification_reasons: safeClarificationReasons }
+      : {}),
+    ...(safeConfidence !== undefined ? { confidence: safeConfidence } : {}),
+    ...(safeNextField !== undefined ? { next_field: safeNextField } : {}),
+  };
 }
 
 export function ChatInput({
@@ -73,10 +127,7 @@ export function ChatInput({
       const parsedProfileId = uploadResult?.data?.profile_id;
       const clarificationQueue = uploadResult?.data?.profile_data?.clarification_queue;
       const extractionSummary = uploadResult?.data?.profile_data?.extraction_summary;
-      const parseAgentReasoning =
-        uploadResult?.data?.agent_reasoning && typeof uploadResult.data.agent_reasoning === "object"
-          ? uploadResult.data.agent_reasoning
-          : undefined;
+      const parseAgentReasoning = toAgentReasoning(uploadResult?.data?.agent_reasoning);
       const confirmationFields = Array.isArray(extractionSummary?.needs_confirmation_fields)
         ? extractionSummary.needs_confirmation_fields
         : [];

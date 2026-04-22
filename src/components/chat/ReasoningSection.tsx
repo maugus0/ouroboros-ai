@@ -112,13 +112,18 @@ export function ReasoningSection({ metadata }: ReasoningSectionProps) {
       <button
         type="button"
         onClick={() => setIsExpanded((prev) => !prev)}
+        aria-expanded={isExpanded}
+        aria-controls="reasoning-section-content"
         className="text-[11px] font-medium text-muted-foreground/90 hover:text-foreground"
       >
         {isExpanded ? "▼ Hide reasoning" : "▶ Show reasoning"}
       </button>
 
       {isExpanded && (
-        <div className="mt-1.5 space-y-1.5 font-mono text-[11px] leading-5 text-muted-foreground/90">
+        <div
+          id="reasoning-section-content"
+          className="mt-1.5 space-y-1.5 font-mono text-[11px] leading-5 text-muted-foreground/90"
+        >
           <div className="text-muted-foreground/70">reasoning</div>
           {sections.map((section, sectionIndex) => (
             <div key={section.key}>
@@ -129,7 +134,7 @@ export function ReasoningSection({ metadata }: ReasoningSectionProps) {
                 {section.lines.map((line, lineIndex) => (
                   <div
                     key={`${section.key}-${lineIndex}`}
-                    className={`leading-5 ${line.startsWith("-") ? "ml-4 text-muted-foreground/80" : ""}`}
+                    className={`whitespace-pre-wrap leading-5 ${line.startsWith("-") ? "ml-4 text-muted-foreground/80" : ""}`}
                   >
                     {line.startsWith("-") ? `     ${line}` : `   • ${line}`}
                   </div>

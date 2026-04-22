@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { getInitials, formatTime, formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { ReasoningSection } from "@/components/chat/ReasoningSection";
-import type { Message, MessageMetadata } from "@/types/chat.types";
+import type { Message } from "@/types/chat.types";
 
 interface MessageBubbleProps {
   message: Message;
@@ -23,7 +23,7 @@ export function MessageBubble({
   isLastAssistantMessage,
 }: MessageBubbleProps) {
   const isUser = message.role === "user";
-  const metadata = message.metadata as MessageMetadata | null;
+  const metadata = message.metadata;
   const agentName = metadata?.agent_name;
   const isTemp = message.id.startsWith("temp-");
 

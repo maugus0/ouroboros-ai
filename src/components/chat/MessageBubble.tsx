@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getInitials, formatTime, formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Message } from "@/types/chat.types";
+import { ReasoningSection } from "@/components/chat/ReasoningSection";
+import type { Message, MessageMetadata } from "@/types/chat.types";
 
 interface MessageBubbleProps {
   message: Message;
@@ -22,7 +23,8 @@ export function MessageBubble({
   isLastAssistantMessage,
 }: MessageBubbleProps) {
   const isUser = message.role === "user";
-  const agentName = message.metadata?.agent_name as string | undefined;
+  const metadata = message.metadata as MessageMetadata | null;
+  const agentName = metadata?.agent_name;
   const isTemp = message.id.startsWith("temp-");
 
   const handleCopy = async () => {
@@ -92,6 +94,7 @@ export function MessageBubble({
             )}
           </div>
         )}
+        <ReasoningSection metadata={metadata} />
         <div className="prose prose-sm max-w-none dark:prose-invert">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
         </div>

@@ -73,6 +73,10 @@ export function ChatInput({
       const parsedProfileId = uploadResult?.data?.profile_id;
       const clarificationQueue = uploadResult?.data?.profile_data?.clarification_queue;
       const extractionSummary = uploadResult?.data?.profile_data?.extraction_summary;
+      const parseAgentReasoning =
+        uploadResult?.data?.agent_reasoning && typeof uploadResult.data.agent_reasoning === "object"
+          ? uploadResult.data.agent_reasoning
+          : undefined;
       const confirmationFields = Array.isArray(extractionSummary?.needs_confirmation_fields)
         ? extractionSummary.needs_confirmation_fields
         : [];
@@ -103,6 +107,7 @@ export function ChatInput({
           intent: "profile_completion",
           notice_title: "Profile Completion",
           uploaded_file_name: file.name,
+          ...(parseAgentReasoning ? { agent_reasoning: parseAgentReasoning } : {}),
           profile_gate: {
             allowed: false,
             reason: "profile_incomplete",

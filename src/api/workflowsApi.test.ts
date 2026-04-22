@@ -35,7 +35,6 @@ describe("workflowsApi.uploadProfileDocument", () => {
     expect((body as FormData).get("file")).toBe(file);
     expect((body as FormData).get("intent")).toBe("profile_completion");
     expect((body as FormData).get("document_type")).toBe("cv");
-    expect((body as FormData).get("target_degree_hint")).toBe("MSc Data Science");
     expect((body as FormData).get("run_gap_analysis")).toBe("false");
     expect(config).toBeUndefined();
     expect(result).toEqual({

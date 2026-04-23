@@ -44,45 +44,49 @@ function formatMatch(item: DashboardScholarship): string {
 export default function ScholarshipsPage() {
   const navigate = useNavigate();
   const [startingId, setStartingId] = useState<string | null>(null);
-  const { dashboardData, isLoading, isDiscovering, error, runDiscovery, clearError } = useDiscovery();
+  const { dashboardData, isLoading, isDiscovering, error, runDiscovery, clearError } =
+    useDiscovery();
 
   const dashboard = dashboardData?.dashboard;
   const scholarships = useMemo(() => dashboard?.scholarships?.items ?? [], [dashboard]);
   const isPartial = dashboard?.status === "partial" || dashboard?.status === "failed";
   const partialMessage = dashboard?.errors?.[0]?.message ?? "Some discovery agents did not finish.";
 
-  const startApplication = useCallback(async (item: DashboardScholarship, idx: number) => {
-    const fallbackName = typeof item.name === "string" && item.name ? item.name : "scholarship";
-    const entityId = String(item.id ?? item.scholarship_id ?? `${fallbackName}-${idx}`);
-    const title = (typeof item.name === "string" && item.name) || "Unnamed Scholarship";
-    const provider =
-      (typeof item.provider === "string" && item.provider) ||
-      (typeof item["organization"] === "string" && item["organization"]) ||
-      null;
-    const deadline = typeof item.deadline === "string" && item.deadline ? item.deadline : null;
-    const score = toNumber(item.match?.match_score);
+  const startApplication = useCallback(
+    async (item: DashboardScholarship, idx: number) => {
+      const fallbackName = typeof item.name === "string" && item.name ? item.name : "scholarship";
+      const entityId = String(item.id ?? item.scholarship_id ?? `${fallbackName}-${idx}`);
+      const title = (typeof item.name === "string" && item.name) || "Unnamed Scholarship";
+      const provider =
+        (typeof item.provider === "string" && item.provider) ||
+        (typeof item["organization"] === "string" && item["organization"]) ||
+        null;
+      const deadline = typeof item.deadline === "string" && item.deadline ? item.deadline : null;
+      const score = toNumber(item.match?.match_score);
 
-    setStartingId(entityId);
-    try {
-      const application = await applicationsApi.start({
-        entity_type: "scholarship",
-        entity_id: entityId,
-        title,
-        provider,
-        deadline,
-        match_score: score,
-        source_data: item as Record<string, unknown>,
-      });
-      toast.success("Application started");
-      navigate("/dashboard/applications", {
-        state: { focusApplicationId: application.id },
-      });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Unable to start application");
-    } finally {
-      setStartingId(null);
-    }
-  }, [navigate]);
+      setStartingId(entityId);
+      try {
+        const application = await applicationsApi.start({
+          entity_type: "scholarship",
+          entity_id: entityId,
+          title,
+          provider,
+          deadline,
+          match_score: score,
+          source_data: item as Record<string, unknown>,
+        });
+        toast.success("Application started");
+        navigate("/dashboard/applications", {
+          state: { focusApplicationId: application.id },
+        });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Unable to start application");
+      } finally {
+        setStartingId(null);
+      }
+    },
+    [navigate]
+  );
 
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">
@@ -192,9 +196,12 @@ export default function ScholarshipsPage() {
                           clearError();
                           void startApplication(item, idx);
                         }}
-                        disabled={startingId === String(item.id ?? item.scholarship_id ?? `${name}-${idx}`)}
+                        disabled={
+                          startingId === String(item.id ?? item.scholarship_id ?? `${name}-${idx}`)
+                        }
                       >
-                        {startingId === String(item.id ?? item.scholarship_id ?? `${name}-${idx}`) ? (
+                        {startingId ===
+                        String(item.id ?? item.scholarship_id ?? `${name}-${idx}`) ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : null}
                         Start Application

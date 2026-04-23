@@ -34,47 +34,54 @@ function formatMatch(program: DashboardProgram): string {
 export default function ProgramsPage() {
   const navigate = useNavigate();
   const [startingId, setStartingId] = useState<string | null>(null);
-  const { dashboardData, isLoading, isDiscovering, error, runDiscovery, clearError } = useDiscovery();
+  const { dashboardData, isLoading, isDiscovering, error, runDiscovery, clearError } =
+    useDiscovery();
 
   const dashboard = dashboardData?.dashboard;
   const programs = useMemo(() => dashboard?.programs?.items ?? [], [dashboard]);
   const isPartial = dashboard?.status === "partial" || dashboard?.status === "failed";
   const partialMessage = dashboard?.errors?.[0]?.message ?? "Some discovery agents did not finish.";
 
-  const startApplication = useCallback(async (program: DashboardProgram, idx: number) => {
-    const entityId = String(program.id ?? `${program.program_name ?? program.name ?? "program"}-${idx}`);
-    const title =
-      (typeof program.program_name === "string" && program.program_name) ||
-      (typeof program.name === "string" && program.name) ||
-      "Unnamed Program";
-    const provider =
-      (typeof program.institution_name === "string" && program.institution_name) ||
-      (typeof program.university === "string" && program.university) ||
-      null;
-    const deadline = typeof program.deadline === "string" && program.deadline ? program.deadline : null;
-    const score = toNumber(program.match?.match_score);
+  const startApplication = useCallback(
+    async (program: DashboardProgram, idx: number) => {
+      const entityId = String(
+        program.id ?? `${program.program_name ?? program.name ?? "program"}-${idx}`
+      );
+      const title =
+        (typeof program.program_name === "string" && program.program_name) ||
+        (typeof program.name === "string" && program.name) ||
+        "Unnamed Program";
+      const provider =
+        (typeof program.institution_name === "string" && program.institution_name) ||
+        (typeof program.university === "string" && program.university) ||
+        null;
+      const deadline =
+        typeof program.deadline === "string" && program.deadline ? program.deadline : null;
+      const score = toNumber(program.match?.match_score);
 
-    setStartingId(entityId);
-    try {
-      const application = await applicationsApi.start({
-        entity_type: "program",
-        entity_id: entityId,
-        title,
-        provider,
-        deadline,
-        match_score: score,
-        source_data: program as Record<string, unknown>,
-      });
-      toast.success("Application started");
-      navigate("/dashboard/applications", {
-        state: { focusApplicationId: application.id },
-      });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Unable to start application");
-    } finally {
-      setStartingId(null);
-    }
-  }, [navigate]);
+      setStartingId(entityId);
+      try {
+        const application = await applicationsApi.start({
+          entity_type: "program",
+          entity_id: entityId,
+          title,
+          provider,
+          deadline,
+          match_score: score,
+          source_data: program as Record<string, unknown>,
+        });
+        toast.success("Application started");
+        navigate("/dashboard/applications", {
+          state: { focusApplicationId: application.id },
+        });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Unable to start application");
+      } finally {
+        setStartingId(null);
+      }
+    },
+    [navigate]
+  );
 
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">

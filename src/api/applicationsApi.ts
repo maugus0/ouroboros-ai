@@ -20,23 +20,34 @@ export const applicationsApi = {
     return response.data;
   },
 
-  async updateStatus(applicationId: string, status: ApplicationStatus): Promise<TrackedApplication> {
-    const response = await apiClient.patch<TrackedApplication>(`${API}/${applicationId}`, { status });
+  async updateStatus(
+    applicationId: string,
+    status: ApplicationStatus
+  ): Promise<TrackedApplication> {
+    const response = await apiClient.patch<TrackedApplication>(`${API}/${applicationId}`, {
+      status,
+    });
     return response.data;
   },
 
   async createChecklist(applicationId: string): Promise<ApplicationActionResponse> {
-    const response = await apiClient.post<ApplicationActionResponse>(`${API}/${applicationId}/checklist`);
+    const response = await apiClient.post<ApplicationActionResponse>(
+      `${API}/${applicationId}/checklist`
+    );
     return response.data;
   },
 
   async syncDeadline(applicationId: string): Promise<ApplicationActionResponse> {
-    const response = await apiClient.post<ApplicationActionResponse>(`${API}/${applicationId}/deadline-sync`);
+    const response = await apiClient.post<ApplicationActionResponse>(
+      `${API}/${applicationId}/deadline-sync`
+    );
     return response.data;
   },
 
   async generateSop(applicationId: string): Promise<ApplicationActionResponse> {
-    const response = await apiClient.post<ApplicationActionResponse>(`${API}/${applicationId}/generate-sop`);
+    const response = await apiClient.post<ApplicationActionResponse>(
+      `${API}/${applicationId}/generate-sop`
+    );
     return response.data;
   },
 

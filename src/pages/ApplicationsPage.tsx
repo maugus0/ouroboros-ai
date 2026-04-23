@@ -29,7 +29,10 @@ const statusLabel: Record<ApplicationStatus, string> = {
   rejected: "Rejected",
 };
 
-const statusVariant: Record<ApplicationStatus, "default" | "secondary" | "destructive" | "outline"> = {
+const statusVariant: Record<
+  ApplicationStatus,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
   not_started: "outline",
   in_progress: "secondary",
   applied: "default",
@@ -74,10 +77,17 @@ function extractChecklistItems(app: TrackedApplication): Array<{
   const data = output?.data;
   if (typeof data !== "object" || data === null || !("items" in data)) return [];
   const items = (data as { items?: unknown }).items;
-  return Array.isArray(items) ? items.filter((item): item is Record<string, string> => typeof item === "object" && item !== null) : [];
+  return Array.isArray(items)
+    ? items.filter(
+        (item): item is Record<string, string> => typeof item === "object" && item !== null
+      )
+    : [];
 }
 
-function extractChecklistSummary(app: TrackedApplication): { overallStatus?: string; completion?: number | null } {
+function extractChecklistSummary(app: TrackedApplication): {
+  overallStatus?: string;
+  completion?: number | null;
+} {
   const output = app.checklist_output;
   const data = output?.data;
   if (typeof data !== "object" || data === null) return {};
@@ -90,7 +100,10 @@ function extractChecklistSummary(app: TrackedApplication): { overallStatus?: str
   };
 }
 
-function extractDeadlineSummary(app: TrackedApplication): { createdCount?: number; skippedDuplicates?: number } {
+function extractDeadlineSummary(app: TrackedApplication): {
+  createdCount?: number;
+  skippedDuplicates?: number;
+} {
   const output = app.deadline_output;
   const data = output?.data;
   if (typeof data !== "object" || data === null) return {};
@@ -136,14 +149,18 @@ export default function ApplicationsPage() {
   }, [loadApplications]);
 
   useEffect(() => {
-    const focusApplicationId = (location.state as { focusApplicationId?: string } | null)?.focusApplicationId;
+    const focusApplicationId = (location.state as { focusApplicationId?: string } | null)
+      ?.focusApplicationId;
     if (!focusApplicationId || isLoading) return;
 
     const node = itemRefs.current[focusApplicationId];
     if (node) {
       node.scrollIntoView({ behavior: "smooth", block: "center" });
       setHighlightedId(focusApplicationId);
-      window.setTimeout(() => setHighlightedId((current) => (current === focusApplicationId ? null : current)), 2200);
+      window.setTimeout(
+        () => setHighlightedId((current) => (current === focusApplicationId ? null : current)),
+        2200
+      );
     }
 
     navigate(location.pathname, { replace: true, state: null });
@@ -229,7 +246,9 @@ export default function ApplicationsPage() {
           </Button>
         </div>
 
-        {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {error && (
+          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12 text-muted-foreground">
@@ -243,7 +262,8 @@ export default function ApplicationsPage() {
               <div className="space-y-1">
                 <p className="text-sm font-medium">No applications started yet.</p>
                 <p className="max-w-md text-sm text-muted-foreground">
-                  Start from a program match, then generate checklists, deadlines, and SOP drafts here.
+                  Start from a program match, then generate checklists, deadlines, and SOP drafts
+                  here.
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -276,135 +296,149 @@ export default function ApplicationsPage() {
                         : undefined
                     }
                   >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <CardTitle className="text-sm sm:text-base">{app.title}</CardTitle>
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">
-                          {app.provider ?? "Unknown provider"}
-                        </p>
-                      </div>
-                      <Badge variant={statusVariant[app.status]} className="shrink-0 text-xs">
-                        {statusLabel[app.status]}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground sm:gap-4 sm:text-sm">
-                      <span>{app.match_score != null ? `${Math.round(app.match_score)}% match` : "No match score"}</span>
-                      <span>{formatDate(app.deadline)}</span>
-                      <span>{app.checklist_output ? "Checklist ready" : "No checklist yet"}</span>
-                      <span>{app.deadline_output ? "Deadlines synced" : "Deadlines not synced"}</span>
-                      <span>{app.entity_type === "scholarship" ? "Scholarship" : "Program"}</span>
-                    </div>
-
-                    {sopContent && (
-                      <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-                        <div className="mb-1 flex items-center gap-1 font-medium text-foreground">
-                          <FileText className="h-3.5 w-3.5" />
-                          SOP draft
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <CardTitle className="text-sm sm:text-base">{app.title}</CardTitle>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">
+                            {app.provider ?? "Unknown provider"}
+                          </p>
                         </div>
-                        <p className="line-clamp-4 whitespace-pre-wrap">{sopContent}</p>
+                        <Badge variant={statusVariant[app.status]} className="shrink-0 text-xs">
+                          {statusLabel[app.status]}
+                        </Badge>
                       </div>
-                    )}
-
-                    {coverLetterContent && (
-                      <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-                        <div className="mb-1 flex items-center gap-1 font-medium text-foreground">
-                          <FileText className="h-3.5 w-3.5" />
-                          Cover letter draft
-                        </div>
-                        <p className="line-clamp-4 whitespace-pre-wrap">{coverLetterContent}</p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground sm:gap-4 sm:text-sm">
+                        <span>
+                          {app.match_score != null
+                            ? `${Math.round(app.match_score)}% match`
+                            : "No match score"}
+                        </span>
+                        <span>{formatDate(app.deadline)}</span>
+                        <span>{app.checklist_output ? "Checklist ready" : "No checklist yet"}</span>
+                        <span>
+                          {app.deadline_output ? "Deadlines synced" : "Deadlines not synced"}
+                        </span>
+                        <span>{app.entity_type === "scholarship" ? "Scholarship" : "Program"}</span>
                       </div>
-                    )}
 
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          if (app.checklist_output) {
-                            setSelectedChecklistId(app.id);
-                            return;
-                          }
-                          void runAction(app, "checklist");
-                        }}
-                        disabled={isBusy}
-                      >
-                        {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Checklist
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          if (app.deadline_output) {
-                            setSelectedDeadlineId(app.id);
-                            return;
-                          }
-                          void runAction(app, "deadline");
-                        }}
-                        disabled={isBusy}
-                      >
-                        Deadline
-                      </Button>
-                      {app.entity_type === "program" && (
-                        <Button size="sm" onClick={() => void runAction(app, "sop")} disabled={isBusy}>
-                          Generate SOP
-                        </Button>
-                      )}
-                      <Button size="sm" onClick={() => void runAction(app, "cover_letter")} disabled={isBusy}>
-                        Generate Cover Letter
-                      </Button>
                       {sopContent && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            setSelectedDocument({
-                              title: "Statement of Purpose",
-                              description: app.title,
-                              content: sopContent,
-                            })
-                          }
-                        >
-                          View SOP
-                        </Button>
+                        <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                          <div className="mb-1 flex items-center gap-1 font-medium text-foreground">
+                            <FileText className="h-3.5 w-3.5" />
+                            SOP draft
+                          </div>
+                          <p className="line-clamp-4 whitespace-pre-wrap">{sopContent}</p>
+                        </div>
                       )}
+
                       {coverLetterContent && (
+                        <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                          <div className="mb-1 flex items-center gap-1 font-medium text-foreground">
+                            <FileText className="h-3.5 w-3.5" />
+                            Cover letter draft
+                          </div>
+                          <p className="line-clamp-4 whitespace-pre-wrap">{coverLetterContent}</p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            setSelectedDocument({
-                              title: "Cover Letter",
-                              description: app.title,
-                              content: coverLetterContent,
-                            })
-                          }
+                          variant="outline"
+                          onClick={() => {
+                            if (app.checklist_output) {
+                              setSelectedChecklistId(app.id);
+                              return;
+                            }
+                            void runAction(app, "checklist");
+                          }}
+                          disabled={isBusy}
                         >
-                          View Letter
+                          {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Checklist
                         </Button>
-                      )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost" disabled={isBusy}>
-                            Set Status
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (app.deadline_output) {
+                              setSelectedDeadlineId(app.id);
+                              return;
+                            }
+                            void runAction(app, "deadline");
+                          }}
+                          disabled={isBusy}
+                        >
+                          Deadline
+                        </Button>
+                        {app.entity_type === "program" && (
+                          <Button
+                            size="sm"
+                            onClick={() => void runAction(app, "sop")}
+                            disabled={isBusy}
+                          >
+                            Generate SOP
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {Object.entries(statusLabel).map(([value, label]) => (
-                            <DropdownMenuItem
-                              key={value}
-                              onClick={() => runAction(app, value as ApplicationStatus)}
-                            >
-                              {label}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardContent>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={() => void runAction(app, "cover_letter")}
+                          disabled={isBusy}
+                        >
+                          Generate Cover Letter
+                        </Button>
+                        {sopContent && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setSelectedDocument({
+                                title: "Statement of Purpose",
+                                description: app.title,
+                                content: sopContent,
+                              })
+                            }
+                          >
+                            View SOP
+                          </Button>
+                        )}
+                        {coverLetterContent && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setSelectedDocument({
+                                title: "Cover Letter",
+                                description: app.title,
+                                content: coverLetterContent,
+                              })
+                            }
+                          >
+                            View Letter
+                          </Button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost" disabled={isBusy}>
+                              Set Status
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {Object.entries(statusLabel).map(([value, label]) => (
+                              <DropdownMenuItem
+                                key={value}
+                                onClick={() => runAction(app, value as ApplicationStatus)}
+                              >
+                                {label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardContent>
                   </div>
                 </Card>
               );
@@ -413,93 +447,120 @@ export default function ApplicationsPage() {
         )}
       </div>
 
-      <Dialog open={Boolean(selectedChecklistApp)} onOpenChange={(open) => !open && setSelectedChecklistId(null)}>
+      <Dialog
+        open={Boolean(selectedChecklistApp)}
+        onOpenChange={(open) => !open && setSelectedChecklistId(null)}
+      >
         <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Checklist</DialogTitle>
-            <DialogDescription>{selectedChecklistApp?.title ?? "Application checklist"}</DialogDescription>
+            <DialogDescription>
+              {selectedChecklistApp?.title ?? "Application checklist"}
+            </DialogDescription>
           </DialogHeader>
           <div className="min-h-0 space-y-4 overflow-y-auto pr-2">
-            {selectedChecklistApp && (() => {
-              const items = extractChecklistItems(selectedChecklistApp);
-              const summary = extractChecklistSummary(selectedChecklistApp);
-              return (
-                <>
-                  <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                    <span>Overall status: {summary.overallStatus ?? "not_started"}</span>
-                    <span>
-                      Completion: {summary.completion != null ? `${Math.round(summary.completion)}%` : "0%"}
-                    </span>
-                  </div>
-                  {items.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No checklist items available yet.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {items.map((item, index) => (
-                        <div key={item.id ?? `${item.description ?? "item"}-${index}`} className="rounded-md border p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{item.description ?? "Checklist item"}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {item.category ?? "general"} • {item.priority ?? "normal"}
-                              </p>
-                            </div>
-                            <Badge variant="outline" className="shrink-0">
-                              {item.status ?? "pending"}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
+            {selectedChecklistApp &&
+              (() => {
+                const items = extractChecklistItems(selectedChecklistApp);
+                const summary = extractChecklistSummary(selectedChecklistApp);
+                return (
+                  <>
+                    <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                      <span>Overall status: {summary.overallStatus ?? "not_started"}</span>
+                      <span>
+                        Completion:{" "}
+                        {summary.completion != null ? `${Math.round(summary.completion)}%` : "0%"}
+                      </span>
                     </div>
-                  )}
-                </>
-              );
-            })()}
+                    {items.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No checklist items available yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {items.map((item, index) => (
+                          <div
+                            key={item.id ?? `${item.description ?? "item"}-${index}`}
+                            className="rounded-md border p-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">
+                                  {item.description ?? "Checklist item"}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {item.category ?? "general"} • {item.priority ?? "normal"}
+                                </p>
+                              </div>
+                              <Badge variant="outline" className="shrink-0">
+                                {item.status ?? "pending"}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
           </div>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(selectedDeadlineApp)} onOpenChange={(open) => !open && setSelectedDeadlineId(null)}>
+      <Dialog
+        open={Boolean(selectedDeadlineApp)}
+        onOpenChange={(open) => !open && setSelectedDeadlineId(null)}
+      >
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Deadline Sync</DialogTitle>
-            <DialogDescription>{selectedDeadlineApp?.title ?? "Application deadline details"}</DialogDescription>
+            <DialogDescription>
+              {selectedDeadlineApp?.title ?? "Application deadline details"}
+            </DialogDescription>
           </DialogHeader>
-          {selectedDeadlineApp && (() => {
-            const summary = extractDeadlineSummary(selectedDeadlineApp);
-            return (
-              <div className="space-y-4 text-sm">
-                <div className="rounded-md border p-3">
-                  <p className="font-medium text-foreground">Tracked deadline</p>
-                  <p className="mt-1 text-muted-foreground">{formatDate(selectedDeadlineApp.deadline)}</p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+          {selectedDeadlineApp &&
+            (() => {
+              const summary = extractDeadlineSummary(selectedDeadlineApp);
+              return (
+                <div className="space-y-4 text-sm">
                   <div className="rounded-md border p-3">
-                    <p className="font-medium text-foreground">Created deadlines</p>
-                    <p className="mt-1 text-muted-foreground">{summary.createdCount ?? 0}</p>
+                    <p className="font-medium text-foreground">Tracked deadline</p>
+                    <p className="mt-1 text-muted-foreground">
+                      {formatDate(selectedDeadlineApp.deadline)}
+                    </p>
                   </div>
-                  <div className="rounded-md border p-3">
-                    <p className="font-medium text-foreground">Skipped duplicates</p>
-                    <p className="mt-1 text-muted-foreground">{summary.skippedDuplicates ?? 0}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-md border p-3">
+                      <p className="font-medium text-foreground">Created deadlines</p>
+                      <p className="mt-1 text-muted-foreground">{summary.createdCount ?? 0}</p>
+                    </div>
+                    <div className="rounded-md border p-3">
+                      <p className="font-medium text-foreground">Skipped duplicates</p>
+                      <p className="mt-1 text-muted-foreground">{summary.skippedDuplicates ?? 0}</p>
+                    </div>
+                  </div>
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <p className="mb-2 font-medium text-foreground">Raw sync result</p>
+                    <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-muted-foreground">
+                      {JSON.stringify(selectedDeadlineApp.deadline_output, null, 2)}
+                    </pre>
                   </div>
                 </div>
-                <div className="rounded-md border bg-muted/30 p-3">
-                  <p className="mb-2 font-medium text-foreground">Raw sync result</p>
-                  <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-muted-foreground">
-                    {JSON.stringify(selectedDeadlineApp.deadline_output, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(selectedDocument)} onOpenChange={(open) => !open && setSelectedDocument(null)}>
+      <Dialog
+        open={Boolean(selectedDocument)}
+        onOpenChange={(open) => !open && setSelectedDocument(null)}
+      >
         <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{selectedDocument?.title ?? "Document"}</DialogTitle>
-            <DialogDescription>{selectedDocument?.description ?? "Generated document"}</DialogDescription>
+            <DialogDescription>
+              {selectedDocument?.description ?? "Generated document"}
+            </DialogDescription>
           </DialogHeader>
           <div className="min-h-0 flex-1 overflow-y-auto rounded-md border bg-muted/20 p-4">
             <pre className="whitespace-pre-wrap text-sm leading-6 text-foreground">

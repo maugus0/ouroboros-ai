@@ -1,5 +1,5 @@
 import type { GateDecision } from "@/types/chat.types";
-import { ThinkingBlock } from "./shared/ThinkingBlock";
+import { ThinkingBlock } from "./shared";
 
 interface GateDecisionBlockProps {
   data: GateDecision;
@@ -7,8 +7,8 @@ interface GateDecisionBlockProps {
 
 export function GateDecisionBlock({ data }: GateDecisionBlockProps) {
   const missingFields = data.missing_fields ?? [];
-  const statusIcon = data.allowed ? "✓" : "✗";
-  const summary = `${statusIcon} ${data.status.replace(/_/g, " ")}`;
+  const statusLabel = data.allowed ? "Allowed" : "Blocked";
+  const summary = `${statusLabel} — ${data.status.replace(/_/g, " ")}`;
 
   return (
     <ThinkingBlock
@@ -30,7 +30,7 @@ export function GateDecisionBlock({ data }: GateDecisionBlockProps) {
                 : "text-amber-600 dark:text-amber-400"
             }
           >
-            {data.allowed ? "Allowed" : "Blocked"} — {data.status.replace(/_/g, " ")}
+            {statusLabel} — {data.status.replace(/_/g, " ")}
           </span>
         </div>
         <div>

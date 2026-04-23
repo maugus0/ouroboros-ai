@@ -1,14 +1,8 @@
 import type { OrchestratorThoughts } from "@/types/chat.types";
-import { ThinkingBlock } from "./shared/ThinkingBlock";
+import { ThinkingBlock, formatConfidence } from "./shared";
 
 interface OrchestratorThoughtsBlockProps {
   data: OrchestratorThoughts;
-}
-
-function formatConfidence(value?: number): string {
-  if (typeof value !== "number" || Number.isNaN(value)) return "";
-  const pct = Math.max(0, Math.min(100, Math.round(value * 100)));
-  return `${pct}%`;
 }
 
 export function OrchestratorThoughtsBlock({ data }: OrchestratorThoughtsBlockProps) {

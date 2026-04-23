@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { MessageMetadata } from "@/types/chat.types";
 import { OrchestratorThoughtsBlock } from "./OrchestratorThoughtsBlock";
 import { GateDecisionBlock } from "./GateDecisionBlock";
@@ -10,19 +9,15 @@ interface ReasoningSectionProps {
 }
 
 export function ReasoningSection({ metadata }: ReasoningSectionProps) {
-  const hasContent = useMemo(() => {
-    if (!metadata) return false;
-    return !!(
-      metadata.orchestrator_thoughts ||
-      metadata.gate_decision ||
-      metadata.routing_decision ||
-      metadata.agent_reasoning
-    );
-  }, [metadata]);
+  if (!metadata) return null;
 
-  if (!hasContent || !metadata) {
-    return null;
-  }
+  const hasContent =
+    metadata.orchestrator_thoughts ||
+    metadata.gate_decision ||
+    metadata.routing_decision ||
+    metadata.agent_reasoning;
+
+  if (!hasContent) return null;
 
   return (
     <div className="mb-3 space-y-1.5">

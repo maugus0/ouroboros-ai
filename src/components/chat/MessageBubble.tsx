@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getInitials, formatTime, formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
-import { ReasoningSection } from "@/components/chat/ReasoningSection";
+import { ReasoningSection } from "@/components/chat/reasoning";
 import type { Message } from "@/types/chat.types";
 
 interface MessageBubbleProps {

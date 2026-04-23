@@ -1,6 +1,6 @@
 export { ReasoningSection } from "./ReasoningSection";
-export { OrchestratorThoughtsCard } from "./OrchestratorThoughtsCard";
-export { GateDecisionCard } from "./GateDecisionCard";
-export { RoutingDecisionCard } from "./RoutingDecisionCard";
-export { AgentReasoningCard } from "./AgentReasoningCard";
-export * from "./shared";
+export { OrchestratorThoughtsBlock } from "./OrchestratorThoughtsBlock";
+export { GateDecisionBlock } from "./GateDecisionBlock";
+export { RoutingDecisionBlock } from "./RoutingDecisionBlock";
+export { AgentReasoningBlock } from "./AgentReasoningBlock";
+export { ThinkingBlock } from "./shared/ThinkingBlock";

@@ -22,7 +22,6 @@ export interface UploadProfileDocumentRequest {
   file: File;
   intent?: string;
   documentType?: "cv" | "transcript" | "unknown";
-  targetDegreeHint?: string;
   runGapAnalysis?: boolean;
 }
 
@@ -42,7 +41,6 @@ export const workflowsApi = {
     file,
     intent = "profile_completion",
     documentType = "cv",
-    targetDegreeHint,
     runGapAnalysis = true,
   }: UploadProfileDocumentRequest): Promise<UploadProfileDocumentResponse> {
     const formData = new FormData();
@@ -50,10 +48,6 @@ export const workflowsApi = {
     formData.append("intent", intent);
     formData.append("document_type", documentType);
     formData.append("run_gap_analysis", String(runGapAnalysis));
-
-    if (targetDegreeHint) {
-      formData.append("target_degree_hint", targetDegreeHint);
-    }
 
     const response = await apiClient.post<UploadProfileDocumentResponse>(
       `${API}/workflows/profile-upload`,

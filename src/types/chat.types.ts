@@ -27,8 +27,50 @@ export interface Message {
   chat_id: string;
   role: "user" | "assistant" | "system";
   content: string;
-  metadata: Record<string, unknown> | null;
+  metadata: MessageMetadata | null;
   created_at: string;
+}
+
+export interface OrchestratorThoughts {
+  intent: string;
+  intent_confidence?: number;
+  reasoning: string;
+}
+
+export interface GateDecision {
+  allowed: boolean;
+  status: string;
+  missing_fields?: string[];
+  reason: string;
+}
+
+export interface RoutingDecision {
+  selected_agent: string;
+  routing_reason: string;
+  confidence?: number;
+  alternative_agents?: string[];
+}
+
+export interface AgentReasoning {
+  approach: string;
+  decision_factors: string[];
+  parse_decisions?: string[];
+  clarification_reasons?: string[];
+  confidence?: number;
+  next_field?: string | null;
+}
+
+export interface MessageMetadata extends Record<string, unknown> {
+  agent_name?: string;
+  intent?: string;
+  profile_gate?: Record<string, unknown>;
+  workflow_run_id?: string;
+  retry_of_log_id?: string | null;
+  active_profile_slot?: Record<string, unknown>;
+  orchestrator_thoughts?: OrchestratorThoughts;
+  gate_decision?: GateDecision;
+  routing_decision?: RoutingDecision;
+  agent_reasoning?: AgentReasoning;
 }
 
 // ─── Project Types ──────────────────────────────────────────────

@@ -33,6 +33,8 @@ export const env = {
   TOKEN_REFRESH_INTERVAL: 10 * 60 * 1000,
   TOKEN_REFRESH_THRESHOLD: 2 * 60 * 1000,
 
+  API_TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 60_000,
+
   IS_DEV: import.meta.env.DEV,
   IS_PROD: import.meta.env.PROD,
 } as const;

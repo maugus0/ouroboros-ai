@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { resultsApi } from "@/api/resultsApi";
+import { getErrorMessage } from "@/api/client";
 import type { DashboardResponse } from "@/types/results.types";
 
 interface DiscoveryContextValue {
@@ -37,7 +38,7 @@ export function DiscoveryProvider({ children }: { children: ReactNode }) {
       const data = await resultsApi.getDashboard({ includeHistory: false });
       setDashboardData(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load discovery results");
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +62,7 @@ export function DiscoveryProvider({ children }: { children: ReactNode }) {
         history: [],
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to run discovery");
+      setError(getErrorMessage(err));
     } finally {
       setIsDiscovering(false);
     }

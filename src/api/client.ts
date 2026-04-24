@@ -159,10 +159,33 @@ apiClient.interceptors.response.use(
 
 export default apiClient;
 
+interface PydanticValidationError {
+  type: string;
+  loc: (string | number)[];
+  msg: string;
+  input?: unknown;
+  ctx?: Record<string, unknown>;
+}
+
+type ApiErrorDetail = string | PydanticValidationError[];
+
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { detail?: string } | undefined;
-    return data?.detail || error.message || "An error occurred";
+    const data = error.response?.data as { detail?: ApiErrorDetail } | undefined;
+    const detail = data?.detail;
+
+    if (typeof detail === "string") {
+      return detail;
+    }
+
+    if (Array.isArray(detail) && detail.length > 0) {
+      const firstError = detail[0];
+      if (firstError && typeof firstError === "object" && "msg" in firstError) {
+        return (firstError as PydanticValidationError).msg;
+      }
+    }
+
+    return error.message || "An error occurred";
   }
   if (error instanceof Error) return error.message;
   return "An unexpected error occurred";

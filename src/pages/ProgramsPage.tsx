@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, GraduationCap, Loader2, MapPin, RefreshCw, Search } from "lucide-react";
 import type { DashboardProgram } from "@/types/results.types";
 import { applicationsApi } from "@/api/applicationsApi";
+import { getErrorMessage } from "@/api/client";
 import { useDiscovery } from "@/contexts/DiscoveryContext";
 import { toast } from "sonner";
 
@@ -75,7 +76,7 @@ export default function ProgramsPage() {
           state: { focusApplicationId: application.id },
         });
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Unable to start application");
+        toast.error(getErrorMessage(err));
       } finally {
         setStartingId(null);
       }

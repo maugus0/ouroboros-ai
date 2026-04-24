@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { resultsApi } from "@/api/resultsApi";
+import { ASSISTANT_SYNC_EVENT, type AssistantSyncDetail } from "@/lib/assistantSync";
 import type { DashboardResponse } from "@/types/results.types";
 
 interface DiscoveryContextValue {
@@ -71,6 +72,23 @@ export function DiscoveryProvider({ children }: { children: ReactNode }) {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
     void loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    const handleAssistantSync = (event: Event) => {
+      const detail = (event as CustomEvent<AssistantSyncDetail>).detail;
+      if (
+        !detail?.refreshTabs?.some((tab) => ["dashboard", "programs", "scholarships"].includes(tab))
+      ) {
+        return;
+      }
+      void loadDashboard();
+    };
+
+    window.addEventListener(ASSISTANT_SYNC_EVENT, handleAssistantSync as EventListener);
+    return () => {
+      window.removeEventListener(ASSISTANT_SYNC_EVENT, handleAssistantSync as EventListener);
+    };
   }, [loadDashboard]);
 
   const value = useMemo<DiscoveryContextValue>(

@@ -27,7 +27,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
   const { createProject } = useProjects();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [color, setColor] = useState(DEFAULT_PROJECT_COLOR);
+  const [color, setColor] = useState<string>(DEFAULT_PROJECT_COLOR);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const trimmedName = name.trim();

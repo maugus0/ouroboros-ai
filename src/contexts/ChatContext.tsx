@@ -11,6 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { chatsApi } from "@/api/chatsApi";
 import { getErrorMessage } from "@/api/client";
+import { dispatchAssistantSync, getAssistantSyncDetail } from "@/lib/assistantSync";
 import type { Chat, ChatFilters, Message } from "@/types/chat.types";
 
 interface ChatContextValue {
@@ -242,6 +243,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ]);
 
         setChats((prev) => prev.map((c) => (c.id === chatId ? response.chat : c)));
+        const syncDetail = getAssistantSyncDetail(response.assistant_message.metadata);
+        if (syncDetail) {
+          dispatchAssistantSync(syncDetail);
+        }
       } catch (err) {
         setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id));
         setError(getErrorMessage(err));

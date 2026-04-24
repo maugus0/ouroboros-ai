@@ -37,7 +37,7 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
   const { updateProject } = useProjects();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [color, setColor] = useState(DEFAULT_PROJECT_COLOR);
+  const [color, setColor] = useState<string>(DEFAULT_PROJECT_COLOR);
   const [icon, setIcon] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

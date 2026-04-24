@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ClipboardList, FileText, GraduationCap, Loader2, RefreshCw, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { applicationsApi } from "@/api/applicationsApi";
+import { ASSISTANT_SYNC_EVENT, type AssistantSyncDetail } from "@/lib/assistantSync";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,6 +131,7 @@ export default function ApplicationsPage() {
     content: string;
   } | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const loadApplications = useCallback(async () => {
@@ -149,8 +151,9 @@ export default function ApplicationsPage() {
   }, [loadApplications]);
 
   useEffect(() => {
-    const focusApplicationId = (location.state as { focusApplicationId?: string } | null)
-      ?.focusApplicationId;
+    const focusApplicationId =
+      (location.state as { focusApplicationId?: string } | null)?.focusApplicationId ??
+      pendingFocusId;
     if (!focusApplicationId || isLoading) return;
 
     const node = itemRefs.current[focusApplicationId];
@@ -163,8 +166,27 @@ export default function ApplicationsPage() {
       );
     }
 
+    if (pendingFocusId === focusApplicationId) {
+      setPendingFocusId(null);
+    }
     navigate(location.pathname, { replace: true, state: null });
-  }, [isLoading, location.pathname, location.state, navigate]);
+  }, [isLoading, location.pathname, location.state, navigate, pendingFocusId]);
+
+  useEffect(() => {
+    const handleAssistantSync = (event: Event) => {
+      const detail = (event as CustomEvent<AssistantSyncDetail>).detail;
+      if (!detail?.refreshTabs?.includes("applications")) return;
+      if (detail.focusApplicationId) {
+        setPendingFocusId(detail.focusApplicationId);
+      }
+      void loadApplications();
+    };
+
+    window.addEventListener(ASSISTANT_SYNC_EVENT, handleAssistantSync as EventListener);
+    return () => {
+      window.removeEventListener(ASSISTANT_SYNC_EVENT, handleAssistantSync as EventListener);
+    };
+  }, [loadApplications]);
 
   const replaceApplication = (updated: TrackedApplication) => {
     setApplications((current) => current.map((item) => (item.id === updated.id ? updated : item)));

@@ -71,6 +71,8 @@ export interface MessageMetadata extends Record<string, unknown> {
   gate_decision?: GateDecision;
   routing_decision?: RoutingDecision;
   agent_reasoning?: AgentReasoning;
+  refresh_tabs?: string[];
+  focus_application_id?: string;
 }
 
 // ─── Project Types ──────────────────────────────────────────────

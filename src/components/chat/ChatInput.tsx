@@ -85,11 +85,13 @@ export function ChatInput({
     const trimmed = value.trim();
     if (!trimmed || isStreaming || isOverLimit || isUploading) return;
 
+    setValue("");
+    textareaRef.current?.focus();
+
     try {
       await Promise.resolve(onSend(trimmed));
-      setValue("");
-      textareaRef.current?.focus();
     } catch (error) {
+      setValue(trimmed);
       toast.error(getErrorMessage(error));
     }
   };

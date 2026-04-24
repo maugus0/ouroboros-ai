@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ClipboardList, FileText, GraduationCap, Loader2, RefreshCw, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { applicationsApi } from "@/api/applicationsApi";
+import { getErrorMessage } from "@/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,7 +139,7 @@ export default function ApplicationsPage() {
     try {
       setApplications(await applicationsApi.list());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load applications");
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -215,7 +216,7 @@ export default function ApplicationsPage() {
         toast.success("Status updated");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Action failed");
+      toast.error(getErrorMessage(err));
     } finally {
       setBusyId(null);
     }

@@ -152,7 +152,8 @@ export default function ApplicationsPage() {
 
   useEffect(() => {
     const focusApplicationId =
-      (location.state as { focusApplicationId?: string } | null)?.focusApplicationId ?? pendingFocusId;
+      (location.state as { focusApplicationId?: string } | null)?.focusApplicationId ??
+      pendingFocusId;
     if (!focusApplicationId || isLoading) return;
 
     const node = itemRefs.current[focusApplicationId];

@@ -77,7 +77,9 @@ export function DiscoveryProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleAssistantSync = (event: Event) => {
       const detail = (event as CustomEvent<AssistantSyncDetail>).detail;
-      if (!detail?.refreshTabs?.some((tab) => ["dashboard", "programs", "scholarships"].includes(tab))) {
+      if (
+        !detail?.refreshTabs?.some((tab) => ["dashboard", "programs", "scholarships"].includes(tab))
+      ) {
         return;
       }
       void loadDashboard();
